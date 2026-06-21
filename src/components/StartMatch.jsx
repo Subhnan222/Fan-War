@@ -58,7 +58,7 @@ function formFromMatch(match) {
   };
 }
 
-export default function StartMatch({ initialMatch, onCreateMatch }) {
+export default function StartMatch({ initialMatch, onCreateMatch, submitError = "", isSubmitting = false }) {
   const [form, setForm] = useState(() => formFromMatch(initialMatch));
 
   const selectedDuration = DURATIONS.find((duration) => duration.label === form.duration);
@@ -74,9 +74,9 @@ export default function StartMatch({ initialMatch, onCreateMatch }) {
     setForm((current) => ({ ...current, [field]: value }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!canCreate || !selectedDuration) return;
+    if (!canCreate || !selectedDuration || isSubmitting) return;
 
     const createdAt = new Date();
     const endsAt = new Date(createdAt.getTime() + selectedDuration.hours * 60 * 60 * 1000);
@@ -97,7 +97,7 @@ export default function StartMatch({ initialMatch, onCreateMatch }) {
       endsAt: endsAt.toISOString(),
     };
 
-    onCreateMatch(match);
+    await onCreateMatch(match);
   };
 
   return (
@@ -221,11 +221,16 @@ export default function StartMatch({ initialMatch, onCreateMatch }) {
           </label>
 
           <div className="cta-zone full-span">
-            <button className="create-match-button" type="submit" disabled={!canCreate}>
+            <button className="create-match-button" type="submit" disabled={!canCreate || isSubmitting}>
               <Swords aria-hidden="true" size={26} />
-              <span>CREATE MATCH</span>
+              <span>{isSubmitting ? "CREATING..." : "CREATE MATCH"}</span>
               <Zap aria-hidden="true" size={30} />
             </button>
+            {submitError ? (
+              <p className="form-error-message" role="alert">
+                {submitError}
+              </p>
+            ) : null}
             <p>You can edit this match before sharing.</p>
           </div>
         </form>

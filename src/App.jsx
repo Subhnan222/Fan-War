@@ -5,6 +5,7 @@ import MatchPreview from "./components/MatchPreview.jsx";
 import StartMatch from "./components/StartMatch.jsx";
 import VoteSide from "./components/VoteSide.jsx";
 import VoteSuccess from "./components/VoteSuccess.jsx";
+import { isSupabaseConfigured, supabase } from "./lib/supabaseClient.js";
 
 const DEMO_VOTES_A = 540;
 const DEMO_VOTES_B = 460;
@@ -88,23 +89,74 @@ export default function App() {
   const [fan, setFan] = useState(null);
   const [voteCounts, setVoteCounts] = useState({ A: DEMO_VOTES_A, B: DEMO_VOTES_B });
   const [voteRecord, setVoteRecord] = useState(null);
+  const [battleError, setBattleError] = useState("");
+  const [voteError, setVoteError] = useState("");
+  const [isCreatingBattle, setIsCreatingBattle] = useState(false);
+  const [isCreatingFanCard, setIsCreatingFanCard] = useState(false);
 
-  const handleCreateMatch = (matchData) => {
-    const battleId = createBattleId(matchData);
-    const matchWithId = {
-      ...matchData,
-      id: battleId,
-      battleLink: createBattleLink(matchData),
+  const handleCreateMatch = async (matchData) => {
+    console.log("Creating battle...");
+    console.log("Supabase URL:", import.meta.env.VITE_SUPABASE_URL);
+
+    setBattleError("");
+    setIsCreatingBattle(true);
+
+    if (!isSupabaseConfigured || !supabase) {
+      const error = new Error("Supabase is not configured. Check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.");
+      console.error("Battle insert error:", error);
+      setBattleError(error.message);
+      setIsCreatingBattle(false);
+      return;
+    }
+
+    const localBattleId = createBattleId(matchData);
+    const battleLink = createBattleLink(matchData);
+    const battlePayload = {
+      title: matchData.title,
+      creator_a_name: matchData.creatorA.name,
+      creator_a_image_url: matchData.creatorA.imageUrl || null,
+      creator_b_name: matchData.creatorB.name,
+      creator_b_image_url: matchData.creatorB.imageUrl || null,
+      duration: matchData.duration,
+      category: matchData.category,
+      message: matchData.message,
+      battle_link: battleLink,
+      created_at: matchData.createdAt,
+      ends_at: matchData.endsAt,
     };
-    const storedVote = readStoredVote(battleId);
 
-    setMatch(matchWithId);
-    setSelectedSide(storedVote?.selectedSide || null);
-    setFan(storedVote?.fan || null);
-    setVoteRecord(storedVote);
-    setVoteCounts(getInitialVoteCounts(matchWithId, storedVote));
-    setScreen("matchPreview");
-    console.log("Fan War match created", matchWithId);
+    try {
+      const { data, error } = await supabase.from("battles").insert(battlePayload).select().single();
+
+      if (error) {
+        console.error("Battle insert error:", error);
+        setBattleError(error.message || "Could not create battle.");
+        return;
+      }
+
+      console.log("Battle inserted:", data);
+
+      const battleId = data?.id || localBattleId;
+      const matchWithId = {
+        ...matchData,
+        id: battleId,
+        battleLink: data?.battle_link || battleLink,
+      };
+      const storedVote = readStoredVote(battleId);
+
+      setMatch(matchWithId);
+      setSelectedSide(storedVote?.selectedSide || null);
+      setFan(storedVote?.fan || null);
+      setVoteRecord(storedVote);
+      setVoteCounts(getInitialVoteCounts(matchWithId, storedVote));
+      setScreen("matchPreview");
+      console.log("Fan War match created", matchWithId);
+    } catch (error) {
+      console.error("Battle insert error:", error);
+      setBattleError(error.message || "Could not create battle.");
+    } finally {
+      setIsCreatingBattle(false);
+    }
   };
 
   const handleVoteNow = () => {
@@ -142,38 +194,79 @@ export default function App() {
       selectedSide: side,
       fan: null,
       votedAt: new Date().toISOString(),
-      countApplied: true,
+      countApplied: false,
     };
 
     setSelectedSide(side);
     setVoteRecord(nextVoteRecord);
-    setVoteCounts((currentCounts) => ({
-      ...currentCounts,
-      [side.side]: currentCounts[side.side] + 1,
-    }));
-    writeStoredVote(match.id, nextVoteRecord);
+    setVoteError("");
     setScreen("fanIdentity");
   };
 
-  const handleCreateFanCard = (fanData) => {
-    setFan(fanData);
-    const nextVoteRecord = {
-      ...(voteRecord || {}),
-      battleId: match.id,
-      selectedSide,
-      fan: fanData,
-      votedAt: voteRecord?.votedAt || new Date().toISOString(),
-      countApplied: true,
-    };
+  const handleCreateFanCard = async (fanData) => {
+    if (!match || !selectedSide) return;
 
-    setVoteRecord(nextVoteRecord);
-    writeStoredVote(match.id, nextVoteRecord);
-    console.log("Fan War vote created", {
-      match,
-      selectedSide,
-      fan: fanData,
-    });
-    setScreen("voteSuccess");
+    setVoteError("");
+    setIsCreatingFanCard(true);
+
+    if (!isSupabaseConfigured || !supabase) {
+      const error = new Error("Supabase is not configured. Check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.");
+      console.error("Vote insert error:", error);
+      setVoteError(error.message);
+      setIsCreatingFanCard(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("votes")
+        .insert({
+          battle_id: match.id,
+          selected_side: selectedSide.side,
+          fan_name: fanData.name,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Vote insert error:", error);
+        setVoteError(error.message || "Could not save vote.");
+        return;
+      }
+
+      console.log("Vote inserted:", data);
+
+      setFan(fanData);
+      const shouldApplyCount = !voteRecord?.countApplied;
+      const nextVoteRecord = {
+        ...(voteRecord || {}),
+        battleId: match.id,
+        selectedSide,
+        fan: fanData,
+        votedAt: voteRecord?.votedAt || new Date().toISOString(),
+        countApplied: true,
+      };
+
+      setVoteRecord(nextVoteRecord);
+      if (shouldApplyCount) {
+        setVoteCounts((currentCounts) => ({
+          ...currentCounts,
+          [selectedSide.side]: currentCounts[selectedSide.side] + 1,
+        }));
+      }
+      writeStoredVote(match.id, nextVoteRecord);
+      console.log("Fan War vote created", {
+        match,
+        selectedSide,
+        fan: fanData,
+      });
+      setScreen("voteSuccess");
+    } catch (error) {
+      console.error("Vote insert error:", error);
+      setVoteError(error.message || "Could not save vote.");
+    } finally {
+      setIsCreatingFanCard(false);
+    }
   };
 
   if (screen === "matchPreview" && match) {
@@ -216,6 +309,8 @@ export default function App() {
         initialFan={fan}
         onCreateFanCard={handleCreateFanCard}
         onBackToVoteSide={() => setScreen("voteSide")}
+        submitError={voteError}
+        isSubmitting={isCreatingFanCard}
       />
     );
   }
@@ -232,5 +327,12 @@ export default function App() {
     );
   }
 
-  return <StartMatch initialMatch={match} onCreateMatch={handleCreateMatch} />;
+  return (
+    <StartMatch
+      initialMatch={match}
+      onCreateMatch={handleCreateMatch}
+      submitError={battleError}
+      isSubmitting={isCreatingBattle}
+    />
+  );
 }

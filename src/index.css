@@ -633,6 +633,20 @@ textarea:focus {
   font-weight: 650;
 }
 
+.form-error-message {
+  width: min(720px, 100%);
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(255, 38, 53, 0.72);
+  border-radius: 10px;
+  color: #ffd4d7 !important;
+  background: rgba(123, 7, 16, 0.28);
+  box-shadow: 0 0 24px rgba(255, 38, 53, 0.18);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-align: center;
+}
+
 .preview-shell {
   display: grid;
   place-items: center;

@@ -5,7 +5,14 @@ function initialFor(name) {
   return name?.trim()?.charAt(0)?.toUpperCase() || "F";
 }
 
-export default function FanIdentity({ selectedSide, initialFan, onCreateFanCard, onBackToVoteSide }) {
+export default function FanIdentity({
+  selectedSide,
+  initialFan,
+  onCreateFanCard,
+  onBackToVoteSide,
+  submitError = "",
+  isSubmitting = false,
+}) {
   const [fanName, setFanName] = useState(initialFan?.name || "");
   const [photoUrl, setPhotoUrl] = useState(initialFan?.photoUrl || "");
   const fileInputRef = useRef(null);
@@ -49,11 +56,11 @@ export default function FanIdentity({ selectedSide, initialFan, onCreateFanCard,
     }
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!canCreate) return;
+    if (!canCreate || isSubmitting) return;
 
-    onCreateFanCard({
+    await onCreateFanCard({
       name: trimmedName,
       photoUrl,
     });
@@ -143,9 +150,14 @@ export default function FanIdentity({ selectedSide, initialFan, onCreateFanCard,
             </div>
 
             <div className="fan-setup-actions">
-              <button className="fan-start-button" type="submit" disabled={!canCreate}>
-                CREATE MY FAN CARD
+              <button className="fan-start-button" type="submit" disabled={!canCreate || isSubmitting}>
+                {isSubmitting ? "CREATING..." : "CREATE MY FAN CARD"}
               </button>
+              {submitError ? (
+                <p className="form-error-message" role="alert">
+                  {submitError}
+                </p>
+              ) : null}
               <button className="fan-back-button" type="button" onClick={onBackToVoteSide}>
                 <ChevronLeft aria-hidden="true" size={18} />
                 Back to Vote
