@@ -1,9 +1,6 @@
 import { Crown, Flame, Timer, Trophy, UsersRound, Vote, Zap } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-const DEMO_VOTES_A = 540;
-const DEMO_VOTES_B = 460;
-
 function initialFor(name) {
   return name?.trim()?.charAt(0)?.toUpperCase() || "F";
 }
@@ -64,7 +61,15 @@ function CreatorBattleCard({ creator, side, votes, percent }) {
   );
 }
 
-export default function BattleBoard({ match, voteCounts, voteRecord, onVoteNow, onBackToPreview }) {
+export default function BattleBoard({
+  match,
+  voteStats,
+  voteRecord,
+  onVoteNow,
+  onBackToPreview,
+  onRefreshVotes,
+  statusMessage = "",
+}) {
   const [remaining, setRemaining] = useState(() => getRemaining(match.endsAt));
 
   useEffect(() => {
@@ -75,14 +80,25 @@ export default function BattleBoard({ match, voteCounts, voteRecord, onVoteNow, 
     return () => window.clearInterval(intervalId);
   }, [match.endsAt]);
 
+  useEffect(() => {
+    if (!onRefreshVotes) return undefined;
+
+    const intervalId = window.setInterval(() => {
+      onRefreshVotes().catch(() => {});
+    }, 10000);
+
+    return () => window.clearInterval(intervalId);
+  }, [onRefreshVotes]);
+
   const stats = useMemo(() => {
-    const creatorAVotes = voteCounts?.A ?? match.creatorA.votes ?? DEMO_VOTES_A;
-    const creatorBVotes = voteCounts?.B ?? match.creatorB.votes ?? DEMO_VOTES_B;
+    const creatorAVotes = voteStats?.creatorAVotes ?? 0;
+    const creatorBVotes = voteStats?.creatorBVotes ?? 0;
     const totalVotes = creatorAVotes + creatorBVotes;
-    const creatorAPercent = totalVotes > 0 ? Math.round((creatorAVotes / totalVotes) * 100) : 50;
-    const creatorBPercent = 100 - creatorAPercent;
-    const winner = creatorAVotes >= creatorBVotes ? match.creatorA.name : match.creatorB.name;
-    const leader = creatorAVotes >= creatorBVotes ? match.creatorA.name : match.creatorB.name;
+    const creatorAPercent = voteStats?.creatorAPercent ?? (totalVotes > 0 ? Math.round((creatorAVotes / totalVotes) * 100) : 50);
+    const creatorBPercent = voteStats?.creatorBPercent ?? (totalVotes > 0 ? 100 - creatorAPercent : 50);
+    const isTie = creatorAVotes === creatorBVotes;
+    const winner = isTie ? "Tie" : creatorAVotes > creatorBVotes ? match.creatorA.name : match.creatorB.name;
+    const leader = isTie ? "Battle is tied" : creatorAVotes > creatorBVotes ? `${match.creatorA.name} is leading` : `${match.creatorB.name} is leading`;
 
     return {
       creatorAVotes,
@@ -93,7 +109,7 @@ export default function BattleBoard({ match, voteCounts, voteRecord, onVoteNow, 
       leader,
       winner,
     };
-  }, [match, voteCounts]);
+  }, [match, voteStats]);
 
   const countdown = formatCountdown(remaining);
   const battleEnded = remaining <= 0;
@@ -186,11 +202,16 @@ export default function BattleBoard({ match, voteCounts, voteRecord, onVoteNow, 
           <div>
             <Trophy aria-hidden="true" size={20} />
             <span>{battleEnded ? "Winner" : "Leading"}</span>
-            <strong>{battleEnded ? stats.winner : `${stats.leader} is leading`}</strong>
+            <strong>{battleEnded ? stats.winner : stats.leader}</strong>
           </div>
         </section>
 
         <div className="battle-actions">
+          {statusMessage ? (
+            <p className="form-error-message" role="alert">
+              {statusMessage}
+            </p>
+          ) : null}
           {voteRecord ? (
             <p className="already-voted-message">You already voted for Team {voteRecord.name}</p>
           ) : null}

@@ -12,8 +12,8 @@ function slugify(value) {
 }
 
 function createBattleLink(match) {
-  const battleSlug = `${slugify(match.creatorA.name)}-vs-${slugify(match.creatorB.name)}`;
-  return `${window.location.origin}/battle/${battleSlug}`;
+  const battleSlug = match.slug || `${slugify(match.creatorA.name)}-vs-${slugify(match.creatorB.name)}`;
+  return `${window.location.origin}/?battle=${battleSlug}`;
 }
 
 function createDownloadName(match) {
@@ -24,7 +24,7 @@ export default function MatchPreview({ match, onBackToEdit, onContinue }) {
   const cardRef = useRef(null);
   const [copyStatus, setCopyStatus] = useState("");
   const [downloadStatus, setDownloadStatus] = useState("");
-  const battleLink = useMemo(() => createBattleLink(match), [match]);
+  const battleLink = useMemo(() => match.battleLink || createBattleLink(match), [match]);
 
   const handleDownload = async () => {
     if (!cardRef.current) return;
