@@ -242,7 +242,7 @@ export default function App() {
   }, []);
 
   const handleStartNewMatch = () => {
-    window.history.replaceState(null, "", window.location.pathname);
+    window.history.pushState({}, "", "/");
     setLoadError("");
     setBattleError("");
     setMatch(null);
@@ -296,6 +296,7 @@ export default function App() {
 
       const matchWithSupabaseBattle = mapBattleRowToMatch(data, matchData);
       const storedVote = readStoredVote(matchWithSupabaseBattle.id);
+      window.history.pushState({}, "", `/?battle=${data.slug}`);
 
       setMatch(matchWithSupabaseBattle);
       setSelectedSide(storedVote?.selectedSide || null);
@@ -453,7 +454,7 @@ export default function App() {
     return (
       <MatchPreview
         match={match}
-        onBackToEdit={() => setScreen("startMatch")}
+        onBackToEdit={handleStartNewMatch}
         onContinue={() => setScreen("battleBoard")}
       />
     );
