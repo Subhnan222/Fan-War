@@ -86,6 +86,11 @@ export default function StartMatch({ initialMatch, onCreateMatch, submitError = 
     setForm((current) => ({ ...current, [field]: value }));
   };
 
+  const updateCreatorImage = (field, image, label) => {
+    console.log(`${label} selected file:`, image.file);
+    setForm((current) => ({ ...current, [field]: image }));
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!canCreate || !selectedDuration || isSubmitting) return;
@@ -161,7 +166,7 @@ export default function StartMatch({ initialMatch, onCreateMatch, submitError = 
               id="creator-a-image"
               label="3. Creator / Brand A image / logo"
               imageUrl={form.creatorAImage.previewUrl}
-              onImageChange={(image) => updateField("creatorAImage", image)}
+              onImageChange={(image) => updateCreatorImage("creatorAImage", image, "Creator A")}
             />
           </section>
 
@@ -179,7 +184,7 @@ export default function StartMatch({ initialMatch, onCreateMatch, submitError = 
               id="creator-b-image"
               label="5. Creator / Brand B image / logo"
               imageUrl={form.creatorBImage.previewUrl}
-              onImageChange={(image) => updateField("creatorBImage", image)}
+              onImageChange={(image) => updateCreatorImage("creatorBImage", image, "Creator B")}
             />
           </section>
 

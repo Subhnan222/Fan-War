@@ -56,24 +56,33 @@ function getFileExtension(file) {
 }
 
 async function uploadCreatorImage(file, battleSlug, creatorKey) {
-  if (!file) return null;
+  if (!file) {
+    console.log(`${creatorKey} no file selected`);
+    return null;
+  }
+
+  console.log(`Uploading ${creatorKey} file:`, file);
 
   const fileExt = getFileExtension(file);
   const filePath = `creators/${battleSlug}/${creatorKey}-${Date.now()}.${fileExt}`;
-  const { error: uploadError } = await supabase.storage.from(STORAGE_BUCKET).upload(filePath, file, {
-    cacheControl: "3600",
-    upsert: true,
-  });
+  const { data: uploadData, error: uploadError } = await supabase.storage
+    .from(STORAGE_BUCKET)
+    .upload(filePath, file, {
+      cacheControl: "3600",
+      upsert: true,
+    });
 
   if (uploadError) {
-    console.error("Creator image upload error:", uploadError);
-    console.error("Image upload failed:", uploadError);
-    const error = new Error("Image upload failed. Please try again.");
-    error.isImageUploadError = true;
-    throw error;
+    console.error(`${creatorKey} upload error:`, uploadError);
+    uploadError.isImageUploadError = true;
+    throw uploadError;
   }
 
+  console.log(`${creatorKey} upload success:`, uploadData);
+
   const { data: publicUrlData } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(filePath);
+  console.log(`${creatorKey} public URL:`, publicUrlData.publicUrl);
+
   return publicUrlData.publicUrl;
 }
 
@@ -150,11 +159,11 @@ function mapBattleRowToMatch(battle, localMatchData) {
     battleLink: createBattleLinkFromSlug(battle.slug),
     creatorA: {
       name: battle.creator_a_name || localMatchData?.creatorA?.name || "Creator A",
-      imageUrl: battle.creator_a_image || localMatchData?.creatorA?.imageUrl || "",
+      imageUrl: battle.creator_a_image || "",
     },
     creatorB: {
       name: battle.creator_b_name || localMatchData?.creatorB?.name || "Creator B",
-      imageUrl: battle.creator_b_image || localMatchData?.creatorB?.imageUrl || "",
+      imageUrl: battle.creator_b_image || "",
     },
   };
 }
@@ -304,6 +313,10 @@ export default function App() {
       console.log("Uploading Creator B image...");
       const creatorBImageUrl = await uploadCreatorImage(matchData.creatorB.imageFile, slug, "creator-b");
       console.log("Creator B image URL:", creatorBImageUrl);
+      console.log("Final creator image URLs:", {
+        creatorAImageUrl,
+        creatorBImageUrl,
+      });
       const battlePayload = {
         slug,
         title: matchData.title,
@@ -318,6 +331,7 @@ export default function App() {
         ends_at: matchData.endsAt,
       };
       console.log("Creating battle with image URLs:", battlePayload);
+      console.log("Battle insert payload:", battlePayload);
 
       const { data, error } = await supabase.from("battles").insert(battlePayload).select().single();
 
@@ -329,7 +343,7 @@ export default function App() {
 
       console.log("Battle inserted:", data);
 
-      const matchWithSupabaseBattle = mapBattleRowToMatch(data, matchData);
+      const matchWithSupabaseBattle = mapBattleRowToMatch(data);
       const storedVote = readStoredVote(matchWithSupabaseBattle.id);
       window.history.pushState({}, "", `/?battle=${data.slug}`);
 
@@ -340,10 +354,13 @@ export default function App() {
       setVoteStats(EMPTY_VOTE_STATS);
       setScreen("matchPreview");
     } catch (error) {
-      if (!error.isImageUploadError) {
+      if (error.isImageUploadError) {
+        console.error("Image upload failed:", error);
+        setBattleError("Image upload failed. Check Supabase Storage policy.");
+      } else {
         console.error("Battle insert error:", error);
+        setBattleError(error.message || "Could not create battle.");
       }
-      setBattleError(error.message || "Could not create battle.");
     } finally {
       setIsCreatingBattle(false);
     }
