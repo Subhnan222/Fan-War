@@ -27,7 +27,7 @@ function CreatorPanel({ creator, side }) {
     <section className={`creator-panel ${side}`}>
       <div className="creator-avatar">
         {creator.imageUrl ? (
-          <img src={creator.imageUrl} alt={`${creator.name} logo`} />
+          <img src={creator.imageUrl} alt={`${creator.name} logo`} crossOrigin="anonymous" />
         ) : (
           <span>{initialFor(creator.name)}</span>
         )}

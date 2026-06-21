@@ -35,9 +35,15 @@ const CATEGORIES = [
 const emptyForm = {
   title: "",
   creatorAName: "",
-  creatorAImageUrl: "",
+  creatorAImage: {
+    previewUrl: "",
+    file: null,
+  },
   creatorBName: "",
-  creatorBImageUrl: "",
+  creatorBImage: {
+    previewUrl: "",
+    file: null,
+  },
   duration: "5 Days",
   category: "",
   message: "",
@@ -49,9 +55,15 @@ function formFromMatch(match) {
   return {
     title: match.title || "",
     creatorAName: match.creatorA?.name || "",
-    creatorAImageUrl: match.creatorA?.imageUrl || "",
+    creatorAImage: {
+      previewUrl: match.creatorA?.imageUrl || "",
+      file: null,
+    },
     creatorBName: match.creatorB?.name || "",
-    creatorBImageUrl: match.creatorB?.imageUrl || "",
+    creatorBImage: {
+      previewUrl: match.creatorB?.imageUrl || "",
+      file: null,
+    },
     duration: match.duration || "5 Days",
     category: match.category || "",
     message: match.message || "",
@@ -84,11 +96,13 @@ export default function StartMatch({ initialMatch, onCreateMatch, submitError = 
       title: form.title.trim(),
       creatorA: {
         name: form.creatorAName.trim(),
-        imageUrl: form.creatorAImageUrl,
+        imageUrl: form.creatorAImage.previewUrl,
+        imageFile: form.creatorAImage.file,
       },
       creatorB: {
         name: form.creatorBName.trim(),
-        imageUrl: form.creatorBImageUrl,
+        imageUrl: form.creatorBImage.previewUrl,
+        imageFile: form.creatorBImage.file,
       },
       duration: form.duration,
       category: form.category,
@@ -146,8 +160,8 @@ export default function StartMatch({ initialMatch, onCreateMatch, submitError = 
             <ImageUploadBox
               id="creator-a-image"
               label="3. Creator / Brand A image / logo"
-              imageUrl={form.creatorAImageUrl}
-              onImageChange={(imageUrl) => updateField("creatorAImageUrl", imageUrl)}
+              imageUrl={form.creatorAImage.previewUrl}
+              onImageChange={(image) => updateField("creatorAImage", image)}
             />
           </section>
 
@@ -164,8 +178,8 @@ export default function StartMatch({ initialMatch, onCreateMatch, submitError = 
             <ImageUploadBox
               id="creator-b-image"
               label="5. Creator / Brand B image / logo"
-              imageUrl={form.creatorBImageUrl}
-              onImageChange={(imageUrl) => updateField("creatorBImageUrl", imageUrl)}
+              imageUrl={form.creatorBImage.previewUrl}
+              onImageChange={(image) => updateField("creatorBImage", image)}
             />
           </section>
 
@@ -223,7 +237,7 @@ export default function StartMatch({ initialMatch, onCreateMatch, submitError = 
           <div className="cta-zone full-span">
             <button className="create-match-button" type="submit" disabled={!canCreate || isSubmitting}>
               <Swords aria-hidden="true" size={26} />
-              <span>{isSubmitting ? "CREATING..." : "CREATE MATCH"}</span>
+              <span>{isSubmitting ? "Creating Match..." : "CREATE MATCH"}</span>
               <Zap aria-hidden="true" size={30} />
             </button>
             {submitError ? (

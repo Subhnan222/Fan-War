@@ -7,6 +7,8 @@ import VoteSide from "./components/VoteSide.jsx";
 import VoteSuccess from "./components/VoteSuccess.jsx";
 import { isSupabaseConfigured, supabase } from "./lib/supabaseClient.js";
 
+const STORAGE_BUCKET = "fan-war-assets";
+
 const EMPTY_VOTE_STATS = {
   creatorAVotes: 0,
   creatorBVotes: 0,
@@ -47,6 +49,31 @@ async function createAvailableBattleSlug(matchData) {
   }
 
   return data ? appendShortTimestamp(baseSlug) : baseSlug;
+}
+
+function getFileExtension(file) {
+  return file?.name?.split(".").pop()?.toLowerCase()?.replace(/[^a-z0-9]/g, "") || "png";
+}
+
+async function uploadCreatorImage(file, battleSlug, creatorKey) {
+  if (!file) return null;
+
+  const fileExt = getFileExtension(file);
+  const filePath = `creators/${battleSlug}/${creatorKey}-${Date.now()}.${fileExt}`;
+  const { error: uploadError } = await supabase.storage.from(STORAGE_BUCKET).upload(filePath, file, {
+    cacheControl: "3600",
+    upsert: true,
+  });
+
+  if (uploadError) {
+    console.error("Image upload error:", uploadError);
+    const error = new Error(`Could not upload ${creatorKey === "creator-a" ? "Creator A" : "Creator B"} image. Check Supabase Storage.`);
+    error.isImageUploadError = true;
+    throw error;
+  }
+
+  const { data: publicUrlData } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(filePath);
+  return publicUrlData.publicUrl;
 }
 
 function createBattleLinkFromSlug(slug) {
@@ -122,11 +149,11 @@ function mapBattleRowToMatch(battle, localMatchData) {
     battleLink: createBattleLinkFromSlug(battle.slug),
     creatorA: {
       name: battle.creator_a_name || localMatchData?.creatorA?.name || "Creator A",
-      imageUrl: localMatchData?.creatorA?.imageUrl || battle.creator_a_image || "",
+      imageUrl: battle.creator_a_image || localMatchData?.creatorA?.imageUrl || "",
     },
     creatorB: {
       name: battle.creator_b_name || localMatchData?.creatorB?.name || "Creator B",
-      imageUrl: localMatchData?.creatorB?.imageUrl || battle.creator_b_image || "",
+      imageUrl: battle.creator_b_image || localMatchData?.creatorB?.imageUrl || "",
     },
   };
 }
@@ -268,22 +295,24 @@ export default function App() {
       return;
     }
 
-    const slug = await createAvailableBattleSlug(matchData);
-    const battlePayload = {
-      slug,
-      title: matchData.title,
-      category: matchData.category,
-      message: matchData.message,
-      duration_label: matchData.duration,
-      creator_a_name: matchData.creatorA.name,
-      creator_a_image: null,
-      creator_b_name: matchData.creatorB.name,
-      creator_b_image: null,
-      starts_at: matchData.createdAt,
-      ends_at: matchData.endsAt,
-    };
-
     try {
+      const slug = await createAvailableBattleSlug(matchData);
+      const creatorAImageUrl = await uploadCreatorImage(matchData.creatorA.imageFile, slug, "creator-a");
+      const creatorBImageUrl = await uploadCreatorImage(matchData.creatorB.imageFile, slug, "creator-b");
+      const battlePayload = {
+        slug,
+        title: matchData.title,
+        category: matchData.category,
+        message: matchData.message,
+        duration_label: matchData.duration,
+        creator_a_name: matchData.creatorA.name,
+        creator_a_image: creatorAImageUrl,
+        creator_b_name: matchData.creatorB.name,
+        creator_b_image: creatorBImageUrl,
+        starts_at: matchData.createdAt,
+        ends_at: matchData.endsAt,
+      };
+
       const { data, error } = await supabase.from("battles").insert(battlePayload).select().single();
 
       if (error) {
@@ -305,7 +334,9 @@ export default function App() {
       setVoteStats(EMPTY_VOTE_STATS);
       setScreen("matchPreview");
     } catch (error) {
-      console.error("Battle insert error:", error);
+      if (!error.isImageUploadError) {
+        console.error("Battle insert error:", error);
+      }
       setBattleError(error.message || "Could not create battle.");
     } finally {
       setIsCreatingBattle(false);

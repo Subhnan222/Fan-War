@@ -32,7 +32,7 @@ function FanVotedCard({ match, selectedSide, fan, cardRef }) {
       <section className="fan-voted-team">
         <div className="fan-voted-team-avatar">
           {selectedSide.imageUrl ? (
-            <img src={selectedSide.imageUrl} alt={`${selectedSide.name} logo`} />
+            <img src={selectedSide.imageUrl} alt={`${selectedSide.name} logo`} crossOrigin="anonymous" />
           ) : (
             <span>{initialFor(selectedSide.name)}</span>
           )}

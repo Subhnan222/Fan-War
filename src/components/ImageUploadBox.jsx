@@ -9,7 +9,7 @@ export default function ImageUploadBox({ id, label, imageUrl, onImageChange }) {
     if (!file) return;
 
     const previewUrl = URL.createObjectURL(file);
-    onImageChange(previewUrl);
+    onImageChange({ previewUrl, file });
   };
 
   return (
