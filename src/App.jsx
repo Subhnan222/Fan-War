@@ -66,8 +66,9 @@ async function uploadCreatorImage(file, battleSlug, creatorKey) {
   });
 
   if (uploadError) {
-    console.error("Image upload error:", uploadError);
-    const error = new Error(`Could not upload ${creatorKey === "creator-a" ? "Creator A" : "Creator B"} image. Check Supabase Storage.`);
+    console.error("Creator image upload error:", uploadError);
+    console.error("Image upload failed:", uploadError);
+    const error = new Error("Image upload failed. Please try again.");
     error.isImageUploadError = true;
     throw error;
   }
@@ -297,8 +298,12 @@ export default function App() {
 
     try {
       const slug = await createAvailableBattleSlug(matchData);
+      console.log("Uploading Creator A image...");
       const creatorAImageUrl = await uploadCreatorImage(matchData.creatorA.imageFile, slug, "creator-a");
+      console.log("Creator A image URL:", creatorAImageUrl);
+      console.log("Uploading Creator B image...");
       const creatorBImageUrl = await uploadCreatorImage(matchData.creatorB.imageFile, slug, "creator-b");
+      console.log("Creator B image URL:", creatorBImageUrl);
       const battlePayload = {
         slug,
         title: matchData.title,
@@ -312,6 +317,7 @@ export default function App() {
         starts_at: matchData.createdAt,
         ends_at: matchData.endsAt,
       };
+      console.log("Creating battle with image URLs:", battlePayload);
 
       const { data, error } = await supabase.from("battles").insert(battlePayload).select().single();
 
