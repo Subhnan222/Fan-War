@@ -1,15 +1,8 @@
 import {
   CalendarDays,
-  CircleEllipsis,
   Clock3,
   Crown,
-  GraduationCap,
-  MapPin,
   Swords,
-  Tag,
-  Trophy,
-  UserRound,
-  Utensils,
   Zap,
 } from "lucide-react";
 import { useState } from "react";
@@ -20,16 +13,6 @@ const DURATIONS = [
   { label: "3 Days", value: "3", unit: "Days", hours: 72, icon: CalendarDays },
   { label: "5 Days", value: "5", unit: "Days", hours: 120, icon: CalendarDays },
   { label: "7 Days", value: "7", unit: "Days", hours: 168, icon: CalendarDays },
-];
-
-const CATEGORIES = [
-  { label: "Creator", icon: UserRound },
-  { label: "Food", icon: Utensils },
-  { label: "Brand", icon: Tag },
-  { label: "School", icon: GraduationCap },
-  { label: "Sports", icon: Trophy },
-  { label: "District", icon: MapPin },
-  { label: "Other", icon: CircleEllipsis },
 ];
 
 const emptyForm = {
@@ -45,8 +28,6 @@ const emptyForm = {
     file: null,
   },
   duration: "5 Days",
-  category: "",
-  message: "",
 };
 
 function formFromMatch(match) {
@@ -65,8 +46,6 @@ function formFromMatch(match) {
       file: null,
     },
     duration: match.duration || "5 Days",
-    category: match.category || "",
-    message: match.message || "",
   };
 }
 
@@ -78,8 +57,7 @@ export default function StartMatch({ initialMatch, onCreateMatch, submitError = 
     form.title.trim() &&
       form.creatorAName.trim() &&
       form.creatorBName.trim() &&
-      selectedDuration &&
-      form.category
+      selectedDuration
   );
 
   const updateField = (field, value) => {
@@ -110,8 +88,8 @@ export default function StartMatch({ initialMatch, onCreateMatch, submitError = 
         imageFile: form.creatorBImage.file,
       },
       duration: form.duration,
-      category: form.category,
-      message: form.message.trim() || "Vote for your favorite side. Fans decide the winner.",
+      category: null,
+      message: "Support your favorite creator. Fans decide the winner.",
       createdAt: createdAt.toISOString(),
       endsAt: endsAt.toISOString(),
     };
@@ -137,7 +115,7 @@ export default function StartMatch({ initialMatch, onCreateMatch, submitError = 
               <h1>
                 Start a <span>Fan War</span> Match
               </h1>
-              <p>Create a premium VS battle that both sides can share with their followers and let the fans decide the winner.</p>
+              <p>Create a VS battle card and let fans vote for their favorite.</p>
             </div>
             <div className="title-divider" aria-hidden="true" />
           </div>
@@ -148,13 +126,13 @@ export default function StartMatch({ initialMatch, onCreateMatch, submitError = 
               type="text"
               value={form.title}
               onChange={(event) => updateField("title", event.target.value)}
-              placeholder="Food Fan Battle"
+              placeholder="Abbas vs Sajad"
             />
           </label>
 
           <section className="creator-card creator-a-card">
             <label className="form-field">
-              <span>2. Creator / Brand A name</span>
+              <span>2. Creator A name</span>
               <input
                 type="text"
                 value={form.creatorAName}
@@ -164,7 +142,7 @@ export default function StartMatch({ initialMatch, onCreateMatch, submitError = 
             </label>
             <ImageUploadBox
               id="creator-a-image"
-              label="3. Creator / Brand A image / logo"
+              label="3. Creator A image / logo"
               imageUrl={form.creatorAImage.previewUrl}
               onImageChange={(image) => updateCreatorImage("creatorAImage", image, "Creator A")}
             />
@@ -172,7 +150,7 @@ export default function StartMatch({ initialMatch, onCreateMatch, submitError = 
 
           <section className="creator-card creator-b-card">
             <label className="form-field">
-              <span>4. Creator / Brand B name</span>
+              <span>4. Creator B name</span>
               <input
                 type="text"
                 value={form.creatorBName}
@@ -182,7 +160,7 @@ export default function StartMatch({ initialMatch, onCreateMatch, submitError = 
             </label>
             <ImageUploadBox
               id="creator-b-image"
-              label="5. Creator / Brand B image / logo"
+              label="5. Creator B image / logo"
               imageUrl={form.creatorBImage.previewUrl}
               onImageChange={(image) => updateCreatorImage("creatorBImage", image, "Creator B")}
             />
@@ -207,37 +185,6 @@ export default function StartMatch({ initialMatch, onCreateMatch, submitError = 
               ))}
             </div>
           </section>
-
-          <section className="choice-section category-section full-span">
-            <div className="section-label">
-              <span>7. Battle category</span>
-            </div>
-            <div className="chip-grid">
-              {CATEGORIES.map((category) => (
-                <button
-                  key={category.label}
-                  className={`category-chip ${form.category === category.label ? "selected" : ""}`}
-                  type="button"
-                  onClick={() => updateField("category", category.label)}
-                >
-                  <category.icon aria-hidden="true" size={19} />
-                  {category.label}
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <label className="form-field message-field full-span">
-            <span>8. Battle message</span>
-            <textarea
-              maxLength={150}
-              value={form.message}
-              onChange={(event) => updateField("message", event.target.value)}
-              placeholder="Vote for your favorite side. Fans decide the winner."
-              rows={4}
-            />
-            <em className="message-count">{form.message.length}/150</em>
-          </label>
 
           <div className="cta-zone full-span">
             <button className="create-match-button" type="submit" disabled={!canCreate || isSubmitting}>

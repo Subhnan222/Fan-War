@@ -96,10 +96,6 @@ export default function MatchPreview({ match, onBackToEdit, onContinue }) {
               <dt>Duration</dt>
               <dd>{match.duration}</dd>
             </div>
-            <div>
-              <dt>Category</dt>
-              <dd>{match.category}</dd>
-            </div>
           </dl>
 
           <div className="preview-link-box">
