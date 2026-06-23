@@ -1874,7 +1874,68 @@ textarea:focus {
   overflow-wrap: anywhere;
 }
 
+.preview-link-box small {
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.preview-next-steps {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.95rem;
+  border: 1px solid rgba(248, 201, 93, 0.34);
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(255, 38, 53, 0.12), rgba(248, 201, 93, 0.1)),
+    rgba(255, 255, 255, 0.045);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.preview-next-steps > strong {
+  color: var(--white);
+  font-size: 1rem;
+  font-weight: 1000;
+}
+
+.preview-next-steps ol {
+  display: grid;
+  gap: 0.48rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.preview-next-steps li {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--copy);
+  font-size: 0.9rem;
+  font-weight: 850;
+}
+
+.preview-next-steps li span {
+  width: 1.55rem;
+  height: 1.55rem;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  color: #160900;
+  background: linear-gradient(135deg, var(--gold-soft), var(--gold));
+  box-shadow: 0 0 18px rgba(248, 201, 93, 0.26);
+  font-size: 0.78rem;
+  font-weight: 1000;
+}
+
 .preview-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+.preview-secondary-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.7rem;
@@ -1905,6 +1966,21 @@ textarea:focus {
   color: var(--gold-soft);
   background: linear-gradient(135deg, var(--red-deep), var(--red), rgba(248, 201, 93, 0.78));
   box-shadow: 0 0 30px rgba(255, 38, 53, 0.26);
+}
+
+.preview-action.open-board-action {
+  min-height: 4.25rem;
+  width: 100%;
+  color: #190600;
+  border: 1px solid rgba(255, 245, 197, 0.7);
+  background:
+    linear-gradient(135deg, #ff2635 0%, #ff5b35 35%, #f8c95d 72%, #fff0a9 100%);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.18) inset,
+    0 0 34px rgba(255, 38, 53, 0.44),
+    0 0 44px rgba(248, 201, 93, 0.32);
+  font-size: clamp(0.95rem, 2.4vw, 1.08rem);
+  letter-spacing: 0.02em;
 }
 
 .preview-action.secondary {
@@ -2042,7 +2118,19 @@ textarea:focus {
     padding: 0.75rem;
   }
 
+  .match-preview-layout {
+    align-items: start;
+  }
+
+  .preview-control-panel {
+    order: -1;
+  }
+
   .preview-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .preview-secondary-actions {
     grid-template-columns: 1fr;
   }
 }

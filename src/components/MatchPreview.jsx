@@ -1,5 +1,5 @@
 import html2canvas from "html2canvas";
-import { ArrowLeft, Copy, Download, Swords } from "lucide-react";
+import { ArrowLeft, Copy, Download, Flag } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import VSMatchCard from "./VSMatchCard.jsx";
 
@@ -84,7 +84,7 @@ export default function MatchPreview({ match, onBackToEdit, onContinue }) {
           <div className="preview-control-copy">
             <span className="eyebrow">Match Created</span>
             <h1>Match Created</h1>
-            <p>Share this VS card with both fan communities.</p>
+            <p>Your Fan War is live. Share the poster and open the Battle Board.</p>
           </div>
 
           <dl className="match-summary preview-summary">
@@ -98,24 +98,36 @@ export default function MatchPreview({ match, onBackToEdit, onContinue }) {
             </div>
           </dl>
 
+          <section className="preview-next-steps" aria-label="What to do next">
+            <strong>Your match is ready.</strong>
+            <ol>
+              <li><span>1</span> Download poster</li>
+              <li><span>2</span> Share link</li>
+              <li><span>3</span> Start voting</li>
+            </ol>
+          </section>
+
           <div className="preview-link-box">
-            <span>Battle link</span>
+            <span>Share this link with fans</span>
             <strong>{battleLink}</strong>
+            <small>Fans open this link to vote.</small>
           </div>
 
           <div className="preview-actions">
-            <button className="preview-action primary" type="button" onClick={handleDownload}>
-              <Download aria-hidden="true" size={20} />
-              Download VS Card
+            <button className="preview-action primary open-board-action" type="button" onClick={onContinue}>
+              <Flag aria-hidden="true" size={24} />
+              Open Battle Board - Start Voting
             </button>
-            <button className="preview-action secondary" type="button" onClick={handleCopyLink}>
-              <Copy aria-hidden="true" size={20} />
-              Copy Battle Link
-            </button>
-            <button className="preview-action accent" type="button" onClick={onContinue}>
-              <Swords aria-hidden="true" size={20} />
-              Continue to Battle Board
-            </button>
+            <div className="preview-secondary-actions">
+              <button className="preview-action secondary" type="button" onClick={handleDownload}>
+                <Download aria-hidden="true" size={20} />
+                Download VS Poster
+              </button>
+              <button className="preview-action secondary" type="button" onClick={handleCopyLink}>
+                <Copy aria-hidden="true" size={20} />
+                Copy Fan Voting Link
+              </button>
+            </div>
             <button className="preview-action ghost" type="button" onClick={onBackToEdit}>
               <ArrowLeft aria-hidden="true" size={20} />
               Back to Edit
