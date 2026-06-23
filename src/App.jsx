@@ -235,6 +235,11 @@ function createLocalVoteRecord(match, selectedSide, fanData, votedAt) {
   };
 }
 
+function isMatchEnded(match) {
+  const endTime = new Date(match?.endsAt).getTime();
+  return Number.isFinite(endTime) && Date.now() > endTime;
+}
+
 function NoticeScreen({ title, message, onPrimaryAction }) {
   return (
     <main className="fanwar-shell preview-shell">
@@ -506,6 +511,11 @@ export default function App() {
 
   const handleVoteNow = () => {
     if (!match) return;
+    if (isMatchEnded(match)) {
+      setBoardError("This battle has ended. Voting is closed.");
+      setScreen("battleBoard");
+      return;
+    }
 
     const storedVote = readNormalizedStoredVote(match);
     if (storedVote?.selectedSide) {
@@ -523,6 +533,11 @@ export default function App() {
 
   const handleVoteSide = (sideOption) => {
     if (!match) return;
+    if (isMatchEnded(match)) {
+      setBoardError("This battle has ended. Voting is closed.");
+      setScreen("battleBoard");
+      return;
+    }
 
     const existingVote = readNormalizedStoredVote(match);
     if (existingVote?.selectedSide) {
@@ -552,6 +567,12 @@ export default function App() {
 
     setVoteError("");
     setIsCreatingFanCard(true);
+
+    if (isMatchEnded(match)) {
+      setVoteError("This battle has ended. Voting is closed.");
+      setIsCreatingFanCard(false);
+      return;
+    }
 
     const existingVote = readNormalizedStoredVote(match);
     if (existingVote?.selectedSide) {
@@ -658,6 +679,7 @@ export default function App() {
         onVoteNow={handleVoteNow}
         onBackToPreview={() => setScreen("matchPreview")}
         onRefreshVotes={() => refreshVoteCounts(match.id)}
+        onStartNewMatch={handleStartNewMatch}
         statusMessage={boardError}
       />
     );

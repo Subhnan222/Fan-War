@@ -1,5 +1,7 @@
-import { Crown, Flame, Swords, Timer, Trophy, UsersRound, Vote, Zap } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import html2canvas from "html2canvas";
+import { Copy, Crown, Download, Flame, MessageCircle, Swords, Timer, Trophy, UsersRound, Vote, X, Zap } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import WinnerCard from "./WinnerCard.jsx";
 
 function initialFor(name) {
   return name?.trim()?.charAt(0)?.toUpperCase() || "F";
@@ -7,6 +9,14 @@ function initialFor(name) {
 
 function formatNumber(value) {
   return new Intl.NumberFormat("en-US").format(value);
+}
+
+function slugify(value) {
+  return (value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 }
 
 function formatBattleTitle(title) {
@@ -39,7 +49,7 @@ function formatCountdown(milliseconds) {
   return { days, hours, minutes, seconds };
 }
 
-function CreatorBattleCard({ creator, side, votes, percent, isLeader, isTie }) {
+function CreatorBattleCard({ creator, side, votes, percent, isLeader, isTie, stateLabel = "LEADING" }) {
   const stateClass = isLeader ? "leader-card" : isTie ? "tie-card" : "";
 
   return (
@@ -47,7 +57,7 @@ function CreatorBattleCard({ creator, side, votes, percent, isLeader, isTie }) {
       {isLeader || isTie ? (
         <div className={`leader-state-badge ${isTie ? "tie" : ""}`}>
           {isTie ? <Swords aria-hidden="true" size={15} /> : <Crown aria-hidden="true" size={15} />}
-          {isTie ? "TIE" : "LEADING"}
+          {isTie ? "TIE" : stateLabel}
         </div>
       ) : null}
       {isLeader ? (
@@ -73,7 +83,7 @@ function CreatorBattleCard({ creator, side, votes, percent, isLeader, isTie }) {
         <p>{formatNumber(votes)} votes</p>
       </div>
       <div className="creator-percent">{percent}% votes</div>
-      {isLeader ? <p className="winning-now">Winning now</p> : null}
+      {isLeader ? <p className="winning-now">{stateLabel === "WINNER" ? "Final winner" : "Winning now"}</p> : null}
     </section>
   );
 }
@@ -85,9 +95,13 @@ export default function BattleBoard({
   onVoteNow,
   onBackToPreview,
   onRefreshVotes,
+  onStartNewMatch,
   statusMessage = "",
 }) {
   const [remaining, setRemaining] = useState(() => getRemaining(match.endsAt));
+  const [showWinnerCard, setShowWinnerCard] = useState(false);
+  const [winnerStatus, setWinnerStatus] = useState("");
+  const winnerCardRef = useRef(null);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -115,10 +129,10 @@ export default function BattleBoard({
     const creatorBPercent = voteStats?.creatorBPercent ?? (totalVotes > 0 ? 100 - creatorAPercent : 50);
     const isTie = creatorAVotes === creatorBVotes;
     const leaderSide = isTie ? "tie" : creatorAVotes > creatorBVotes ? "A" : "B";
-    const winner = isTie ? "Tie" : creatorAVotes > creatorBVotes ? match.creatorA.name : match.creatorB.name;
-    const leaderLine = isTie
-      ? "⚔️ Battle is tied"
-      : `🏆 ${leaderSide === "A" ? match.creatorA.name : match.creatorB.name} is leading`;
+    const winnerCreator = leaderSide === "A" ? match.creatorA : leaderSide === "B" ? match.creatorB : null;
+    const winner = winnerCreator?.name || "Tie";
+    const leaderLine = isTie ? "Battle is tied" : `${winner} is leading`;
+    const margin = Math.abs(creatorAVotes - creatorBVotes);
 
     return {
       creatorAVotes,
@@ -129,7 +143,11 @@ export default function BattleBoard({
       leaderLine,
       leaderSide,
       isTie,
+      margin,
+      resultType: isTie ? "tie" : leaderSide === "A" ? "red" : "gold",
       winner,
+      winnerCreator,
+      winnerName: winner,
     };
   }, [match, voteStats]);
 
@@ -137,6 +155,70 @@ export default function BattleBoard({
   const battleEnded = remaining <= 0;
   const battleTitle = formatBattleTitle(match.title);
   const votedCreatorName = voteRecord?.selectedCreatorName || voteRecord?.name || "";
+  const battleLink = match.battleLink || `${window.location.origin}/?battle=${match.slug}`;
+  const resultMessage = stats.isTie ? "BATTLE ENDED IN A TIE" : `${stats.winnerName} WINS`;
+  const winnerResult = {
+    resultType: stats.resultType,
+    winnerName: stats.winnerName,
+    winnerCreator: stats.winnerCreator,
+    creatorAVotes: stats.creatorAVotes,
+    creatorBVotes: stats.creatorBVotes,
+    totalVotes: stats.totalVotes,
+    margin: stats.margin,
+  };
+
+  const copyBattleLink = async () => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(battleLink);
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = battleLink;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+
+      setWinnerStatus("Battle link copied");
+      window.setTimeout(() => setWinnerStatus(""), 2200);
+    } catch (error) {
+      console.error("Could not copy battle link", error);
+      setWinnerStatus("Copy failed");
+    }
+  };
+
+  const handleDownloadWinnerCard = async () => {
+    if (!winnerCardRef.current) return;
+    setWinnerStatus("Preparing winner card...");
+
+    try {
+      const canvas = await html2canvas(winnerCardRef.current, {
+        scale: 2,
+        backgroundColor: null,
+        useCORS: true,
+      });
+
+      const link = document.createElement("a");
+      link.download = `fan-war-winner-${slugify(stats.isTie ? "tie" : stats.winnerName)}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      setWinnerStatus("Download ready");
+    } catch (error) {
+      console.error("Could not download winner card", error);
+      setWinnerStatus("Download failed");
+    }
+  };
+
+  const handleShareWinner = () => {
+    const message = stats.isTie
+      ? `Fan War ended in a tie!\nFinal votes: ${formatNumber(stats.creatorAVotes)} vs ${formatNumber(stats.creatorBVotes)}\n${battleLink}`
+      : `${stats.winnerName} won the Fan War!\nFinal votes: ${formatNumber(stats.creatorAVotes)} vs ${formatNumber(stats.creatorBVotes)}\nFans decided the winner.\n${battleLink}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <main className="fanwar-shell battle-board-shell">
@@ -166,6 +248,7 @@ export default function BattleBoard({
             percent={stats.creatorAPercent}
             isLeader={stats.leaderSide === "A"}
             isTie={stats.isTie}
+            stateLabel={battleEnded ? "WINNER" : "LEADING"}
           />
 
           <div className={`battle-vs-core ${stats.isTie ? "tie" : ""}`} aria-label={stats.isTie ? "Battle is tied" : "Versus"}>
@@ -181,8 +264,33 @@ export default function BattleBoard({
             percent={stats.creatorBPercent}
             isLeader={stats.leaderSide === "B"}
             isTie={stats.isTie}
+            stateLabel={battleEnded ? "WINNER" : "LEADING"}
           />
         </section>
+
+        {battleEnded ? (
+          <section className={`battle-final-result ${stats.resultType}`} aria-label="Final battle result">
+            <span>Final Result</span>
+            <h2>{resultMessage}</h2>
+            <div className="final-vote-grid">
+              <p>
+                <strong>{match.creatorA.name}</strong>
+                {formatNumber(stats.creatorAVotes)} votes
+              </p>
+              <p>
+                <strong>{match.creatorB.name}</strong>
+                {formatNumber(stats.creatorBVotes)} votes
+              </p>
+              <p>
+                <strong>Total votes</strong>
+                {formatNumber(stats.totalVotes)}
+              </p>
+            </div>
+            <p className="final-margin">
+              {stats.isTie ? "No winner yet. Equal votes." : `Won by ${formatNumber(stats.margin)} votes`}
+            </p>
+          </section>
+        ) : null}
 
         <section className={`support-meter-panel leader-${stats.leaderSide.toLowerCase()}`} aria-label="Vote percentage meter">
           <p>Current votes</p>
@@ -241,7 +349,7 @@ export default function BattleBoard({
           <div className={`leader-stat ${stats.isTie ? "tie" : stats.leaderSide === "A" ? "red" : "gold"}`}>
             <Trophy aria-hidden="true" size={20} />
             <span>{battleEnded ? "Winner" : "Leading"}</span>
-            <strong>{battleEnded ? stats.winner : stats.leaderLine}</strong>
+            <strong>{battleEnded ? resultMessage : stats.leaderLine}</strong>
           </div>
         </section>
 
@@ -256,7 +364,7 @@ export default function BattleBoard({
           ) : null}
           <button className="support-favorite-button" type="button" onClick={onVoteNow} disabled={battleEnded}>
             <Vote aria-hidden="true" size={25} />
-            {votedCreatorName ? "VIEW MY VOTE" : "VOTE NOW"}
+            {battleEnded ? "VOTING CLOSED" : votedCreatorName ? "VIEW MY VOTE" : "VOTE NOW"}
           </button>
           <p>
             Choose a side. <strong>Cast your vote.</strong> Share your card.
@@ -265,6 +373,65 @@ export default function BattleBoard({
             Back to VS Card
           </button>
         </div>
+
+        {battleEnded ? (
+          <section className="winner-actions" aria-label="Winner card actions">
+            <button className="preview-action primary open-board-action" type="button" onClick={() => setShowWinnerCard(true)}>
+              <Trophy aria-hidden="true" size={22} />
+              View Winner Card
+            </button>
+            <div className="preview-secondary-actions">
+              <button className="preview-action secondary" type="button" onClick={handleDownloadWinnerCard}>
+                <Download aria-hidden="true" size={20} />
+                Download Winner Card
+              </button>
+              <button className="preview-action secondary" type="button" onClick={handleShareWinner}>
+                <MessageCircle aria-hidden="true" size={20} />
+                Share Result WhatsApp
+              </button>
+            </div>
+            <div className="preview-secondary-actions">
+              <button className="preview-action ghost" type="button" onClick={copyBattleLink}>
+                <Copy aria-hidden="true" size={20} />
+                Copy Battle Link
+              </button>
+              <button className="preview-action ghost" type="button" onClick={onStartNewMatch}>
+                Start New Match
+              </button>
+            </div>
+            <div className="preview-status-row" aria-live="polite">
+              {winnerStatus && <span>{winnerStatus}</span>}
+            </div>
+          </section>
+        ) : null}
+
+        {battleEnded ? (
+          <div className="winner-card-capture" aria-hidden="true">
+            <WinnerCard match={match} result={winnerResult} cardRef={winnerCardRef} />
+          </div>
+        ) : null}
+
+        {showWinnerCard ? (
+          <div className="winner-modal" role="dialog" aria-modal="true" aria-label="Winner card preview">
+            <button className="winner-modal-backdrop" type="button" onClick={() => setShowWinnerCard(false)} aria-label="Close winner card preview" />
+            <section className="winner-modal-panel">
+              <button className="winner-modal-close" type="button" onClick={() => setShowWinnerCard(false)} aria-label="Close winner card">
+                <X aria-hidden="true" size={20} />
+              </button>
+              <WinnerCard match={match} result={winnerResult} />
+              <div className="winner-modal-actions">
+                <button className="preview-action primary" type="button" onClick={handleDownloadWinnerCard}>
+                  <Download aria-hidden="true" size={20} />
+                  Download Winner Card
+                </button>
+                <button className="preview-action secondary" type="button" onClick={handleShareWinner}>
+                  <MessageCircle aria-hidden="true" size={20} />
+                  Share Result
+                </button>
+              </div>
+            </section>
+          </div>
+        ) : null}
       </section>
     </main>
   );
