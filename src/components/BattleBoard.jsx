@@ -114,6 +114,7 @@ export default function BattleBoard({
   const countdown = formatCountdown(remaining);
   const battleEnded = remaining <= 0;
   const battleTitle = formatBattleTitle(match.title);
+  const votedCreatorName = voteRecord?.selectedCreatorName || voteRecord?.name || "";
 
   return (
     <main className="fanwar-shell battle-board-shell">
@@ -212,12 +213,12 @@ export default function BattleBoard({
               {statusMessage}
             </p>
           ) : null}
-          {voteRecord ? (
-            <p className="already-voted-message">You already voted for Team {voteRecord.name}</p>
+          {votedCreatorName ? (
+            <p className="already-voted-message">You voted for Team {votedCreatorName}</p>
           ) : null}
           <button className="support-favorite-button" type="button" onClick={onVoteNow} disabled={battleEnded}>
             <Vote aria-hidden="true" size={25} />
-            {voteRecord ? "VIEW FAN CARD" : "VOTE NOW"}
+            {votedCreatorName ? "VIEW MY VOTE" : "VOTE NOW"}
           </button>
           <p>
             Choose a side. <strong>Cast your vote.</strong> Share your card.

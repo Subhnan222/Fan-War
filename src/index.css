@@ -3433,7 +3433,8 @@ textarea:focus {
 
 .vote-side-shell,
 .fan-identity-shell,
-.vote-success-shell {
+.vote-success-shell,
+.already-voted-shell {
   display: grid;
   place-items: start center;
   padding-block: 1.2rem 2rem;
@@ -4019,6 +4020,53 @@ textarea:focus {
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
 }
 
+.already-voted-panel {
+  width: min(620px, 100%);
+  display: grid;
+  gap: 1rem;
+  align-self: center;
+  margin: auto;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border: 1px solid rgba(248, 201, 93, 0.56);
+  border-left-color: rgba(255, 38, 53, 0.82);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 0% 24%, rgba(255, 38, 53, 0.22), transparent 15rem),
+    radial-gradient(circle at 100% 24%, rgba(248, 201, 93, 0.2), transparent 15rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.52)),
+    rgba(0, 0, 0, 0.78);
+  box-shadow:
+    -12px 0 52px rgba(255, 38, 53, 0.18),
+    12px 0 52px rgba(248, 201, 93, 0.14),
+    0 24px 70px rgba(0, 0, 0, 0.52);
+}
+
+.already-voted-panel h1 {
+  max-width: 12ch;
+  color: #ffffff;
+  font-size: clamp(2.25rem, 7vw, 4.2rem);
+  line-height: 0.92;
+  font-style: italic;
+  text-transform: uppercase;
+}
+
+.already-voted-panel p {
+  color: var(--copy);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.08rem;
+  font-weight: 850;
+  line-height: 1.4;
+}
+
+.already-voted-panel p strong {
+  color: var(--gold-soft);
+}
+
+.already-voted-note {
+  color: rgba(255, 255, 255, 0.72) !important;
+  font-size: 0.9rem !important;
+}
+
 .vote-success-badge {
   width: max-content;
   min-height: 2rem;
@@ -4061,6 +4109,12 @@ textarea:focus {
   gap: 0.7rem;
 }
 
+.preview-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .vote-success-actions .preview-action small {
   display: block;
   color: rgba(255, 255, 255, 0.74);
@@ -4072,8 +4126,17 @@ textarea:focus {
 @media (max-width: 760px) {
   .vote-side-shell,
   .fan-identity-shell,
-  .vote-success-shell {
+  .vote-success-shell,
+  .already-voted-shell {
     padding: 0;
+  }
+
+  .already-voted-panel {
+    width: 100%;
+    min-height: 100svh;
+    align-content: center;
+    border-radius: 0;
+    border-inline: 0;
   }
 
   .vote-side-arena,

@@ -116,6 +116,15 @@ function writeStoredVote(battleId, data) {
   }
 }
 
+function getStoredVoteSide(storedVote) {
+  if (!storedVote) return "";
+  if (storedVote.selectedSide === "A" || storedVote.selectedSide === "B") return storedVote.selectedSide;
+  if (storedVote.selectedSide?.side === "A" || storedVote.selectedSide?.side === "B") {
+    return storedVote.selectedSide.side;
+  }
+  return "";
+}
+
 function createVoteStats(creatorAVotes, creatorBVotes) {
   const totalVotes = creatorAVotes + creatorBVotes;
   const creatorAPercent = totalVotes === 0 ? 50 : Math.round((creatorAVotes / totalVotes) * 100);
@@ -168,6 +177,64 @@ function mapBattleRowToMatch(battle, localMatchData) {
   };
 }
 
+function createSelectedSideFromMatch(match, side) {
+  if (!match || (side !== "A" && side !== "B")) return null;
+
+  const isSideB = side === "B";
+  const creator = isSideB ? match.creatorB : match.creatorA;
+
+  return {
+    id: isSideB ? "creator-b" : "creator-a",
+    name: creator.name,
+    imageUrl: creator.imageUrl,
+    color: isSideB ? "gold" : "red",
+    side,
+  };
+}
+
+function normalizeStoredVote(storedVote, match) {
+  const side = getStoredVoteSide(storedVote);
+  if (!storedVote || !side || !match?.id) return null;
+
+  const selectedSide = createSelectedSideFromMatch(match, side);
+
+  return {
+    battleId: storedVote.battleId || match.id,
+    selectedSide: side,
+    selectedCreatorName:
+      storedVote.selectedCreatorName || storedVote.selectedSide?.name || selectedSide?.name || "Creator",
+    fanName: storedVote.fanName || storedVote.fan?.name || "",
+    votedAt: storedVote.votedAt || new Date().toISOString(),
+  };
+}
+
+function readNormalizedStoredVote(match) {
+  if (!match?.id) return null;
+
+  const storedVote = readStoredVote(match.id);
+  const normalizedVote = normalizeStoredVote(storedVote, match);
+
+  if (storedVote && normalizedVote && JSON.stringify(storedVote) !== JSON.stringify(normalizedVote)) {
+    writeStoredVote(match.id, normalizedVote);
+  }
+
+  return normalizedVote;
+}
+
+function createFanFromVoteRecord(voteRecord) {
+  return voteRecord?.fanName ? { name: voteRecord.fanName, photoUrl: "" } : null;
+}
+
+function createLocalVoteRecord(match, selectedSide, fanData, votedAt) {
+  return {
+    battleId: match.id,
+    selectedSide: selectedSide.side,
+    selectedCreatorName: selectedSide.name,
+    fanName: fanData.name,
+    votedAt,
+  };
+}
+
 function NoticeScreen({ title, message, onPrimaryAction }) {
   return (
     <main className="fanwar-shell preview-shell">
@@ -183,6 +250,77 @@ function NoticeScreen({ title, message, onPrimaryAction }) {
             Create Match
           </button>
         ) : null}
+      </section>
+    </main>
+  );
+}
+
+function AlreadyVotedScreen({ match, voteRecord, onViewFanCard, onBackToBattle }) {
+  const [status, setStatus] = useState("");
+  const selectedCreatorName = voteRecord?.selectedCreatorName || "this team";
+  const battleLink = match.battleLink || createBattleLinkFromSlug(match.slug);
+
+  const handleShareBattle = async () => {
+    const message = `I voted for Team ${selectedCreatorName} in Fan War. Vote here: ${battleLink}`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "Fan War Battle",
+          text: message,
+          url: battleLink,
+        });
+        setStatus("Share opened");
+        return;
+      }
+
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(message);
+        setStatus("Battle link copied");
+        window.setTimeout(() => setStatus(""), 2200);
+        return;
+      }
+
+      setStatus("Share unavailable");
+    } catch (error) {
+      console.error("Could not share battle", error);
+      setStatus("Share failed");
+    }
+  };
+
+  return (
+    <main className="fanwar-shell already-voted-shell">
+      <div className="cinema-grid" aria-hidden="true" />
+      <section className="already-voted-panel" aria-live="polite">
+        <span className="vote-success-badge">Vote already counted</span>
+        <h1>YOU ALREADY VOTED</h1>
+        <p>
+          You already voted for Team <strong>{selectedCreatorName}</strong>.
+        </p>
+        {!voteRecord?.fanName ? (
+          <p className="already-voted-note">Your fan card data is not available on this device.</p>
+        ) : null}
+
+        <div className="vote-success-actions">
+          <button
+            className="preview-action primary"
+            type="button"
+            onClick={onViewFanCard}
+            disabled={!voteRecord?.fanName}
+          >
+            View My Fan Card
+          </button>
+          <button className="preview-action secondary" type="button" onClick={onBackToBattle}>
+            Back to Battle Board
+          </button>
+          <button className="preview-action ghost" type="button" onClick={handleShareBattle}>
+            Share Battle
+          </button>
+        </div>
+
+        <div className="preview-status-row" aria-live="polite">
+          {status && <span>{status}</span>}
+        </div>
       </section>
     </main>
   );
@@ -250,7 +388,7 @@ export default function App() {
       }
 
       const loadedMatch = mapBattleRowToMatch(data);
-      const storedVote = readStoredVote(loadedMatch.id);
+      const storedVote = readNormalizedStoredVote(loadedMatch);
       let loadedVoteStats = EMPTY_VOTE_STATS;
 
       try {
@@ -263,8 +401,8 @@ export default function App() {
       if (isCancelled) return;
 
       setMatch(loadedMatch);
-      setSelectedSide(storedVote?.selectedSide || null);
-      setFan(storedVote?.fan || null);
+      setSelectedSide(createSelectedSideFromMatch(loadedMatch, storedVote?.selectedSide));
+      setFan(createFanFromVoteRecord(storedVote));
       setVoteRecord(storedVote);
       setVoteStats(loadedVoteStats);
       setScreen("battleBoard");
@@ -344,12 +482,12 @@ export default function App() {
       console.log("Battle inserted:", data);
 
       const matchWithSupabaseBattle = mapBattleRowToMatch(data);
-      const storedVote = readStoredVote(matchWithSupabaseBattle.id);
+      const storedVote = readNormalizedStoredVote(matchWithSupabaseBattle);
       window.history.pushState({}, "", `/?battle=${data.slug}`);
 
       setMatch(matchWithSupabaseBattle);
-      setSelectedSide(storedVote?.selectedSide || null);
-      setFan(storedVote?.fan || null);
+      setSelectedSide(createSelectedSideFromMatch(matchWithSupabaseBattle, storedVote?.selectedSide));
+      setFan(createFanFromVoteRecord(storedVote));
       setVoteRecord(storedVote);
       setVoteStats(EMPTY_VOTE_STATS);
       setScreen("matchPreview");
@@ -369,17 +507,12 @@ export default function App() {
   const handleVoteNow = () => {
     if (!match) return;
 
-    const storedVote = readStoredVote(match.id);
+    const storedVote = readNormalizedStoredVote(match);
     if (storedVote?.selectedSide) {
-      setSelectedSide(storedVote.selectedSide);
-      setFan(storedVote.fan || null);
+      setSelectedSide(createSelectedSideFromMatch(match, storedVote.selectedSide));
+      setFan(createFanFromVoteRecord(storedVote));
       setVoteRecord(storedVote);
-
-      if (storedVote.fan) {
-        setScreen("voteSuccess");
-      } else {
-        setBoardError("You already voted on this device.");
-      }
+      setScreen("alreadyVoted");
       return;
     }
 
@@ -391,18 +524,12 @@ export default function App() {
   const handleVoteSide = (sideOption) => {
     if (!match) return;
 
-    const existingVote = readStoredVote(match.id);
+    const existingVote = readNormalizedStoredVote(match);
     if (existingVote?.selectedSide) {
-      setSelectedSide(existingVote.selectedSide);
-      setFan(existingVote.fan || null);
+      setSelectedSide(createSelectedSideFromMatch(match, existingVote.selectedSide));
+      setFan(createFanFromVoteRecord(existingVote));
       setVoteRecord(existingVote);
-
-      if (existingVote.fan) {
-        setScreen("voteSuccess");
-      } else {
-        setBoardError("You already voted on this device.");
-        setScreen("battleBoard");
-      }
+      setScreen("alreadyVoted");
       return;
     }
 
@@ -426,17 +553,14 @@ export default function App() {
     setVoteError("");
     setIsCreatingFanCard(true);
 
-    const existingVote = readStoredVote(match.id);
+    const existingVote = readNormalizedStoredVote(match);
     if (existingVote?.selectedSide) {
-      setVoteError("You already voted on this device.");
-      setSelectedSide(existingVote.selectedSide);
-      setFan(existingVote.fan || null);
+      setVoteError(`You already voted for Team ${existingVote.selectedCreatorName}.`);
+      setSelectedSide(createSelectedSideFromMatch(match, existingVote.selectedSide));
+      setFan(createFanFromVoteRecord(existingVote));
       setVoteRecord(existingVote);
       setIsCreatingFanCard(false);
-
-      if (existingVote.fan) {
-        setScreen("voteSuccess");
-      }
+      setScreen("alreadyVoted");
       return;
     }
 
@@ -469,13 +593,12 @@ export default function App() {
 
       console.log("Vote inserted:", data);
 
-      const nextVoteRecord = {
-        battleId: match.id,
-        voteId: data.id,
+      const nextVoteRecord = createLocalVoteRecord(
+        match,
         selectedSide,
-        fan: fanData,
-        votedAt: data.created_at || new Date().toISOString(),
-      };
+        fanData,
+        data.created_at || new Date().toISOString(),
+      );
 
       setFan(fanData);
       setVoteRecord(nextVoteRecord);
@@ -494,6 +617,18 @@ export default function App() {
     } finally {
       setIsCreatingFanCard(false);
     }
+  };
+
+  const handleViewSavedFanCard = () => {
+    if (!match || !voteRecord?.fanName) return;
+
+    const savedSide = createSelectedSideFromMatch(match, voteRecord.selectedSide);
+    const savedFan =
+      fan?.name === voteRecord.fanName ? fan : { name: voteRecord.fanName, photoUrl: "" };
+
+    setSelectedSide(savedSide);
+    setFan(savedFan);
+    setScreen("voteSuccess");
   };
 
   if (isLoadingBattle) {
@@ -519,7 +654,7 @@ export default function App() {
       <BattleBoard
         match={match}
         voteStats={voteStats}
-        voteRecord={voteRecord?.selectedSide ? voteRecord.selectedSide : null}
+        voteRecord={voteRecord}
         onVoteNow={handleVoteNow}
         onBackToPreview={() => setScreen("matchPreview")}
         onRefreshVotes={() => refreshVoteCounts(match.id)}
@@ -548,6 +683,17 @@ export default function App() {
         onBackToVoteSide={() => setScreen("voteSide")}
         submitError={voteError}
         isSubmitting={isCreatingFanCard}
+      />
+    );
+  }
+
+  if (screen === "alreadyVoted" && match && voteRecord) {
+    return (
+      <AlreadyVotedScreen
+        match={match}
+        voteRecord={voteRecord}
+        onViewFanCard={handleViewSavedFanCard}
+        onBackToBattle={() => setScreen("battleBoard")}
       />
     );
   }
