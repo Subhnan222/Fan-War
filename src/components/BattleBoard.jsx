@@ -1,4 +1,4 @@
-import { Crown, Flame, Timer, Trophy, UsersRound, Vote, Zap } from "lucide-react";
+import { Crown, Flame, Swords, Timer, Trophy, UsersRound, Vote, Zap } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 function initialFor(name) {
@@ -39,10 +39,26 @@ function formatCountdown(milliseconds) {
   return { days, hours, minutes, seconds };
 }
 
-function CreatorBattleCard({ creator, side, votes, percent }) {
+function CreatorBattleCard({ creator, side, votes, percent, isLeader, isTie }) {
+  const stateClass = isLeader ? "leader-card" : isTie ? "tie-card" : "";
+
   return (
-    <section className={`battle-creator-card ${side}`}>
+    <section className={`battle-creator-card ${side} ${stateClass}`}>
+      {isLeader || isTie ? (
+        <div className={`leader-state-badge ${isTie ? "tie" : ""}`}>
+          {isTie ? <Swords aria-hidden="true" size={15} /> : <Crown aria-hidden="true" size={15} />}
+          {isTie ? "TIE" : "LEADING"}
+        </div>
+      ) : null}
+      {isLeader ? (
+        <div className="leader-sparks" aria-hidden="true">
+          {Array.from({ length: 8 }, (_, index) => (
+            <span key={index} />
+          ))}
+        </div>
+      ) : null}
       <div className="battle-panel-frame">
+        {isLeader ? <Crown className="creator-crown" aria-hidden="true" size={30} /> : null}
         <div className="battle-avatar">
           {creator.imageUrl ? (
             <img src={creator.imageUrl} alt={`${creator.name} logo`} />
@@ -57,6 +73,7 @@ function CreatorBattleCard({ creator, side, votes, percent }) {
         <p>{formatNumber(votes)} votes</p>
       </div>
       <div className="creator-percent">{percent}% votes</div>
+      {isLeader ? <p className="winning-now">Winning now</p> : null}
     </section>
   );
 }
@@ -97,8 +114,11 @@ export default function BattleBoard({
     const creatorAPercent = voteStats?.creatorAPercent ?? (totalVotes > 0 ? Math.round((creatorAVotes / totalVotes) * 100) : 50);
     const creatorBPercent = voteStats?.creatorBPercent ?? (totalVotes > 0 ? 100 - creatorAPercent : 50);
     const isTie = creatorAVotes === creatorBVotes;
+    const leaderSide = isTie ? "tie" : creatorAVotes > creatorBVotes ? "A" : "B";
     const winner = isTie ? "Tie" : creatorAVotes > creatorBVotes ? match.creatorA.name : match.creatorB.name;
-    const leader = isTie ? "Battle is tied" : creatorAVotes > creatorBVotes ? `${match.creatorA.name} is leading` : `${match.creatorB.name} is leading`;
+    const leaderLine = isTie
+      ? "⚔️ Battle is tied"
+      : `🏆 ${leaderSide === "A" ? match.creatorA.name : match.creatorB.name} is leading`;
 
     return {
       creatorAVotes,
@@ -106,7 +126,9 @@ export default function BattleBoard({
       creatorAPercent,
       creatorBPercent,
       totalVotes,
-      leader,
+      leaderLine,
+      leaderSide,
+      isTie,
       winner,
     };
   }, [match, voteStats]);
@@ -142,11 +164,14 @@ export default function BattleBoard({
             side="red"
             votes={stats.creatorAVotes}
             percent={stats.creatorAPercent}
+            isLeader={stats.leaderSide === "A"}
+            isTie={stats.isTie}
           />
 
-          <div className="battle-vs-core" aria-hidden="true">
+          <div className={`battle-vs-core ${stats.isTie ? "tie" : ""}`} aria-label={stats.isTie ? "Battle is tied" : "Versus"}>
             <div className="battle-lightning-slash" />
             <span>VS</span>
+            {stats.isTie ? <small>Battle is tied</small> : null}
           </div>
 
           <CreatorBattleCard
@@ -154,10 +179,12 @@ export default function BattleBoard({
             side="gold"
             votes={stats.creatorBVotes}
             percent={stats.creatorBPercent}
+            isLeader={stats.leaderSide === "B"}
+            isTie={stats.isTie}
           />
         </section>
 
-        <section className="support-meter-panel" aria-label="Vote percentage meter">
+        <section className={`support-meter-panel leader-${stats.leaderSide.toLowerCase()}`} aria-label="Vote percentage meter">
           <p>Current votes</p>
           <div className="meter-label-row">
             <span>{match.creatorA.name} {stats.creatorAPercent}%</span>
@@ -165,8 +192,19 @@ export default function BattleBoard({
             <span>{match.creatorB.name} {stats.creatorBPercent}%</span>
           </div>
           <div className="battle-support-meter">
-            <div className="support-fill-red" style={{ width: `${stats.creatorAPercent}%` }} />
-            <div className="support-fill-gold" style={{ width: `${stats.creatorBPercent}%` }} />
+            {stats.leaderSide !== "tie" ? (
+              <div className={`meter-leader-marker ${stats.leaderSide === "A" ? "red" : "gold"}`}>
+                <Crown aria-hidden="true" size={18} />
+              </div>
+            ) : null}
+            <div
+              className={`support-fill-red ${stats.leaderSide === "A" ? "leading" : ""}`}
+              style={{ width: `${stats.creatorAPercent}%` }}
+            />
+            <div
+              className={`support-fill-gold ${stats.leaderSide === "B" ? "leading" : ""}`}
+              style={{ width: `${stats.creatorBPercent}%` }}
+            />
           </div>
         </section>
 
@@ -200,10 +238,10 @@ export default function BattleBoard({
             <strong>{formatNumber(stats.totalVotes)}</strong>
             <span>fans voted</span>
           </div>
-          <div>
+          <div className={`leader-stat ${stats.isTie ? "tie" : stats.leaderSide === "A" ? "red" : "gold"}`}>
             <Trophy aria-hidden="true" size={20} />
             <span>{battleEnded ? "Winner" : "Leading"}</span>
-            <strong>{battleEnded ? stats.winner : stats.leader}</strong>
+            <strong>{battleEnded ? stats.winner : stats.leaderLine}</strong>
           </div>
         </section>
 
