@@ -25,7 +25,7 @@ function displayTitle(title) {
 function CreatorPanel({ creator, side }) {
   return (
     <section className={`creator-panel ${side}`}>
-      <div className="creator-avatar">
+      <div className="creator-photo-wrap">
         {creator.imageUrl ? (
           <img src={creator.imageUrl} alt={`${creator.name} logo`} crossOrigin="anonymous" />
         ) : (
