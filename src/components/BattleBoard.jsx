@@ -67,23 +67,23 @@ function CreatorBattleCard({ creator, side, votes, percent, isLeader, isTie, sta
           ))}
         </div>
       ) : null}
-      <div className="battle-panel-frame">
-        {isLeader ? <Crown className="creator-crown" aria-hidden="true" size={30} /> : null}
-        <div className="battle-avatar">
-          {creator.imageUrl ? (
-            <img src={creator.imageUrl} alt={`${creator.name} logo`} />
-          ) : (
-            <span>{initialFor(creator.name)}</span>
-          )}
+      {isLeader ? <Crown className="creator-crown" aria-hidden="true" size={34} /> : null}
+      {creator.imageUrl ? (
+        <img className="battle-creator-image" src={creator.imageUrl} alt={`${creator.name} logo`} />
+      ) : (
+        <div className="battle-creator-fallback" aria-hidden="true">
+          <span>{initialFor(creator.name)}</span>
         </div>
+      )}
+      <div className="creator-card-content">
+        <div className="creator-copy">
+          <strong>{creator.name}</strong>
+          <span className="team-label">Team {creator.name}</span>
+          <p>{formatNumber(votes)} votes</p>
+        </div>
+        <div className="creator-percent">{percent}% votes</div>
+        {isLeader ? <p className="winning-now">{stateLabel === "WINNER" ? "Final winner" : "Winning now"}</p> : null}
       </div>
-      <div className="creator-copy">
-        <strong>{creator.name}</strong>
-        <span className="team-label">Team {creator.name}</span>
-        <p>{formatNumber(votes)} votes</p>
-      </div>
-      <div className="creator-percent">{percent}% votes</div>
-      {isLeader ? <p className="winning-now">{stateLabel === "WINNER" ? "Final winner" : "Winning now"}</p> : null}
     </section>
   );
 }

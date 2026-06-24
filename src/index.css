@@ -3086,42 +3086,31 @@ textarea:focus {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 150px minmax(0, 1fr);
   align-items: end;
-  gap: 0.65rem;
-  min-height: 315px;
+  gap: 0.85rem;
+  min-height: 390px;
   padding: 0.2rem 0.2rem 0;
 }
 
 .battle-creator-card {
   position: relative;
   min-width: 0;
-  display: grid;
-  justify-items: center;
-  gap: 0.7rem;
-  min-height: 288px;
-  padding: 1rem 0.85rem 0.95rem;
-  border-radius: 10px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.56)),
-    rgba(0, 0, 0, 0.68);
+  min-height: 370px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.68);
   clip-path: polygon(8% 0, 100% 0, 92% 100%, 0 100%);
   isolation: isolate;
-}
-
-.battle-creator-card > * {
-  position: relative;
-  z-index: 2;
 }
 
 .battle-creator-card::before {
   content: "";
   position: absolute;
-  inset: 0.45rem;
-  z-index: -1;
-  border-radius: 8px;
+  inset: 0;
+  z-index: 2;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 45%),
-    rgba(255, 255, 255, 0.035);
-  clip-path: inherit;
+    linear-gradient(180deg, rgba(0, 0, 0, 0.06) 0%, rgba(0, 0, 0, 0.16) 44%, rgba(0, 0, 0, 0.9) 100%),
+    radial-gradient(circle at 50% 24%, transparent 0%, rgba(0, 0, 0, 0.16) 44%, rgba(0, 0, 0, 0.62) 100%);
+  pointer-events: none;
 }
 
 .battle-creator-card.leader-card {
@@ -3130,9 +3119,9 @@ textarea:focus {
 
 .battle-creator-card.leader-card::before {
   background:
-    radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.24), transparent 30%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.14), transparent 48%),
-    rgba(255, 255, 255, 0.05);
+    radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.18), transparent 26%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.02) 0%, rgba(0, 0, 0, 0.14) 42%, rgba(0, 0, 0, 0.92) 100%),
+    radial-gradient(circle at 50% 24%, transparent 0%, rgba(0, 0, 0, 0.12) 42%, rgba(0, 0, 0, 0.58) 100%);
 }
 
 .battle-creator-card.leader-card::after {
@@ -3200,7 +3189,7 @@ textarea:focus {
 .leader-sparks {
   position: absolute;
   inset: 0.35rem;
-  z-index: 1;
+  z-index: 3;
   pointer-events: none;
   overflow: hidden;
   border-radius: 12px;
@@ -3276,28 +3265,11 @@ textarea:focus {
     0 0 72px rgba(255, 92, 37, 0.16);
 }
 
-.battle-panel-frame {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 10.25rem;
-  height: 10.25rem;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle, rgba(255, 255, 255, 0.24), transparent 58%),
-    rgba(0, 0, 0, 0.52);
-}
-
-.battle-creator-card.leader-card .battle-panel-frame,
-.battle-creator-card.tie-card .battle-panel-frame {
-  margin-top: 1.15rem;
-}
-
 .creator-crown {
   position: absolute;
-  top: -1.28rem;
+  top: 2.85rem;
   left: 50%;
-  z-index: 4;
+  z-index: 6;
   color: var(--gold-soft);
   fill: var(--gold);
   filter:
@@ -3307,37 +3279,53 @@ textarea:focus {
   animation: crownFloat 1.8s ease-in-out infinite;
 }
 
-.battle-avatar {
-  width: 9.35rem;
-  height: 9.35rem;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.96);
-}
-
-.red .battle-avatar {
-  border: 4px solid rgba(255, 38, 53, 0.94);
-  box-shadow: 0 0 34px rgba(255, 38, 53, 0.42);
-}
-
-.gold .battle-avatar {
-  border: 4px solid rgba(248, 201, 93, 0.94);
-  box-shadow: 0 0 34px rgba(248, 201, 93, 0.34);
-}
-
-.battle-avatar img {
+.battle-creator-image,
+.battle-creator-fallback {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   width: 100%;
   height: 100%;
-  object-fit: cover;
 }
 
-.battle-avatar span {
-  color: #111111;
-  font-size: 4.1rem;
+.battle-creator-image {
+  object-fit: cover;
+  object-position: center;
+  transform: scale(1.02);
+}
+
+.battle-creator-fallback {
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.94);
+  font-size: 7.4rem;
   font-weight: 1000;
   text-transform: uppercase;
+  text-shadow: 0 5px 0 rgba(0, 0, 0, 0.82), 0 0 38px rgba(255, 255, 255, 0.26);
+}
+
+.red .battle-creator-fallback {
+  background:
+    radial-gradient(circle at 50% 26%, rgba(255, 111, 93, 0.42), transparent 34%),
+    linear-gradient(150deg, rgba(104, 0, 11, 0.98), rgba(18, 0, 4, 0.96));
+}
+
+.gold .battle-creator-fallback {
+  background:
+    radial-gradient(circle at 50% 26%, rgba(255, 231, 140, 0.42), transparent 34%),
+    linear-gradient(150deg, rgba(104, 70, 0, 0.98), rgba(17, 11, 0, 0.96));
+}
+
+.creator-card-content {
+  position: relative;
+  z-index: 4;
+  min-height: 370px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 9.7rem 1.05rem 1.05rem;
 }
 
 .creator-copy {
@@ -5210,15 +5198,14 @@ textarea:focus {
   }
 
   .battle-matchup-grid {
-    grid-template-columns: minmax(0, 1fr) 4.35rem minmax(0, 1fr);
-    min-height: 255px;
-    gap: 0.25rem;
+    grid-template-columns: minmax(0, 1fr);
+    min-height: auto;
+    gap: 0.75rem;
   }
 
   .battle-creator-card {
-    min-height: 238px;
-    padding: 0.78rem 0.48rem;
-    border-radius: 10px;
+    min-height: 330px;
+    border-radius: 14px;
     transform: none;
     clip-path: polygon(6% 0, 100% 0, 94% 100%, 0 100%);
   }
@@ -5228,9 +5215,10 @@ textarea:focus {
     clip-path: polygon(0 0, 94% 0, 100% 100%, 6% 100%);
   }
 
-  .battle-creator-card.leader-card .battle-panel-frame,
-  .battle-creator-card.tie-card .battle-panel-frame {
-    margin-top: 0.95rem;
+  .creator-card-content {
+    min-height: 330px;
+    gap: 0.45rem;
+    padding: 8.6rem 1rem 1rem;
   }
 
   .leader-state-badge {
@@ -5246,38 +5234,27 @@ textarea:focus {
     height: 0.78rem;
   }
 
-  .battle-panel-frame {
-    width: 7.8rem;
-    height: 7.8rem;
-  }
-
-  .battle-avatar {
-    width: 7.1rem;
-    height: 7.1rem;
-    border-width: 3px;
-  }
-
   .creator-crown {
-    top: -1rem;
-    width: 1.4rem;
-    height: 1.4rem;
+    top: 2.25rem;
+    width: 1.65rem;
+    height: 1.65rem;
   }
 
-  .battle-avatar span {
-    font-size: 3.15rem;
+  .battle-creator-fallback span {
+    font-size: 6.5rem;
   }
 
   .creator-copy strong {
-    font-size: 1.45rem;
+    font-size: 2rem;
   }
 
   .team-label {
-    font-size: 0.82rem;
+    font-size: 0.94rem;
   }
 
   .creator-copy p,
   .creator-percent {
-    font-size: 0.72rem;
+    font-size: 0.82rem;
   }
 
   .winning-now {
@@ -5291,12 +5268,16 @@ textarea:focus {
   }
 
   .battle-vs-core span {
-    font-size: 3.85rem;
+    font-size: 4.75rem;
     -webkit-text-stroke-width: 1.4px;
   }
 
+  .battle-vs-core {
+    min-height: 5.8rem;
+  }
+
   .battle-lightning-slash {
-    inset: 14% 46%;
+    inset: 8% 48%;
   }
 
   .battle-vs-core small {
