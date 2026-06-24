@@ -158,6 +158,32 @@ p {
   text-transform: uppercase;
 }
 
+.my-matches-entry {
+  min-height: 2.55rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.55rem;
+  padding: 0 1rem;
+  border: 1px solid rgba(248, 201, 93, 0.74);
+  border-radius: 999px;
+  color: var(--gold-soft);
+  background:
+    linear-gradient(135deg, rgba(255, 38, 53, 0.16), rgba(248, 201, 93, 0.12)),
+    rgba(0, 0, 0, 0.58);
+  box-shadow: 0 0 22px rgba(248, 201, 93, 0.18);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.82rem;
+  font-weight: 1000;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.my-matches-entry:hover {
+  border-color: rgba(255, 232, 163, 0.95);
+  filter: brightness(1.08);
+}
+
 .match-form,
 .preview-panel {
   border: 1px solid rgba(248, 201, 93, 0.82);
@@ -2032,6 +2058,205 @@ textarea:focus {
   background: rgba(248, 201, 93, 0.08);
   font-size: 0.78rem;
   font-weight: 900;
+}
+
+.my-matches-shell {
+  display: grid;
+  place-items: start center;
+}
+
+.my-matches-panel {
+  width: min(900px, 100%);
+  display: grid;
+  gap: 1.1rem;
+  padding: clamp(1.15rem, 3vw, 2.3rem);
+  border: 1px solid rgba(248, 201, 93, 0.78);
+  border-left-color: rgba(255, 38, 53, 0.88);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255, 38, 53, 0.18), transparent 17rem),
+    radial-gradient(circle at 100% 0%, rgba(248, 201, 93, 0.15), transparent 18rem),
+    rgba(3, 3, 4, 0.9);
+  box-shadow:
+    -10px 0 44px rgba(255, 38, 53, 0.15),
+    10px 0 44px rgba(248, 201, 93, 0.12),
+    0 28px 80px rgba(0, 0, 0, 0.64);
+}
+
+.my-matches-header {
+  display: grid;
+  justify-items: center;
+  gap: 0.45rem;
+  text-align: center;
+}
+
+.my-matches-header .brand-mark {
+  font-size: clamp(2.8rem, 7vw, 4.4rem);
+}
+
+.my-matches-header h1 {
+  max-width: none;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+}
+
+.my-matches-header p {
+  color: var(--copy);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-weight: 760;
+}
+
+.my-matches-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.my-match-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(255, 38, 53, 0.12), rgba(248, 201, 93, 0.1)),
+    rgba(0, 0, 0, 0.58);
+  box-shadow: inset 0 0 28px rgba(255, 255, 255, 0.035);
+}
+
+.my-match-card-top {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.my-match-card-top svg {
+  color: var(--gold);
+  filter: drop-shadow(0 0 10px rgba(248, 201, 93, 0.5));
+}
+
+.my-match-card h2 {
+  margin: 0.4rem 0 0;
+  color: #ffffff;
+  font-size: clamp(1.25rem, 3vw, 1.8rem);
+  line-height: 1;
+  font-weight: 1000;
+  text-transform: uppercase;
+}
+
+.my-match-status {
+  display: inline-flex;
+  min-height: 1.55rem;
+  align-items: center;
+  padding: 0 0.62rem;
+  border-radius: 999px;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.68rem;
+  font-weight: 1000;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.my-match-status.live {
+  color: #ffffff;
+  background: rgba(255, 38, 53, 0.24);
+  border: 1px solid rgba(255, 38, 53, 0.62);
+  box-shadow: 0 0 18px rgba(255, 38, 53, 0.26);
+}
+
+.my-match-status.ended {
+  color: var(--gold-soft);
+  background: rgba(248, 201, 93, 0.12);
+  border: 1px solid rgba(248, 201, 93, 0.52);
+}
+
+.my-match-creators {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.my-match-creator {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: 0.45rem;
+  text-align: center;
+}
+
+.my-match-avatar {
+  width: 4.2rem;
+  height: 4.2rem;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.my-match-creator.red .my-match-avatar {
+  border: 3px solid rgba(255, 38, 53, 0.94);
+  box-shadow: 0 0 22px rgba(255, 38, 53, 0.32);
+}
+
+.my-match-creator.gold .my-match-avatar {
+  border: 3px solid rgba(248, 201, 93, 0.94);
+  box-shadow: 0 0 22px rgba(248, 201, 93, 0.28);
+}
+
+.my-match-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.my-match-avatar span {
+  color: #111111;
+  font-size: 1.85rem;
+  font-weight: 1000;
+}
+
+.my-match-creator strong {
+  max-width: 100%;
+  color: #ffffff;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.88rem;
+  font-weight: 1000;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.my-match-vs {
+  color: var(--gold);
+  font-size: 1.45rem;
+  font-weight: 1000;
+  text-shadow: 0 0 16px rgba(248, 201, 93, 0.42);
+}
+
+.my-matches-empty {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  padding: 2rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.42);
+  text-align: center;
+}
+
+.my-matches-empty h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(1.35rem, 4vw, 2rem);
+  line-height: 1;
+  font-weight: 1000;
+  text-transform: uppercase;
+}
+
+.my-matches-back {
+  justify-self: center;
 }
 
 @media (max-width: 920px) {

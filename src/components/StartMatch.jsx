@@ -2,6 +2,7 @@ import {
   CalendarDays,
   Clock3,
   Crown,
+  ListChecks,
   Swords,
   Zap,
 } from "lucide-react";
@@ -49,7 +50,14 @@ function formFromMatch(match) {
   };
 }
 
-export default function StartMatch({ initialMatch, onCreateMatch, submitError = "", isSubmitting = false }) {
+export default function StartMatch({
+  initialMatch,
+  onCreateMatch,
+  onOpenMyMatches,
+  hasSavedMatches = false,
+  submitError = "",
+  isSubmitting = false,
+}) {
   const [form, setForm] = useState(() => formFromMatch(initialMatch));
 
   const selectedDuration = DURATIONS.find((duration) => duration.label === form.duration);
@@ -107,6 +115,12 @@ export default function StartMatch({ initialMatch, onCreateMatch, submitError = 
             <span>FAN</span> <strong>WAR</strong>
           </p>
           <p className="brand-tagline">Creators compete. Fans decide.</p>
+          {hasSavedMatches ? (
+            <button className="my-matches-entry" type="button" onClick={onOpenMyMatches}>
+              <ListChecks aria-hidden="true" size={18} />
+              My Matches
+            </button>
+          ) : null}
         </header>
 
         <form className="match-form" onSubmit={handleSubmit}>

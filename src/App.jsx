@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import BattleBoard from "./components/BattleBoard.jsx";
 import FanIdentity from "./components/FanIdentity.jsx";
 import MatchPreview from "./components/MatchPreview.jsx";
+import MyMatches from "./components/MyMatches.jsx";
 import StartMatch from "./components/StartMatch.jsx";
 import VoteSide from "./components/VoteSide.jsx";
 import VoteSuccess from "./components/VoteSuccess.jsx";
@@ -9,6 +10,7 @@ import { trackEvent } from "./lib/analytics.js";
 import { isSupabaseConfigured, supabase } from "./lib/supabaseClient.js";
 
 const STORAGE_BUCKET = "fan-war-assets";
+const MY_MATCHES_KEY = "fanwar_my_matches";
 
 const EMPTY_VOTE_STATS = {
   creatorAVotes: 0,
@@ -97,6 +99,51 @@ function getBattleSlugFromUrl() {
 
 function getVoteStorageKey(battleId) {
   return `fanwar_vote_${battleId}`;
+}
+
+function readMyMatches() {
+  try {
+    const rawMatches = window.localStorage.getItem(MY_MATCHES_KEY);
+    const matches = rawMatches ? JSON.parse(rawMatches) : [];
+    return Array.isArray(matches) ? matches : [];
+  } catch (error) {
+    console.error("Could not read Fan War matches", error);
+    return [];
+  }
+}
+
+function createSavedMatchRecord(battle) {
+  return {
+    id: battle.id,
+    slug: battle.slug,
+    title: battle.title,
+    creatorAName: battle.creator_a_name,
+    creatorBName: battle.creator_b_name,
+    creatorAImage: battle.creator_a_image,
+    creatorBImage: battle.creator_b_image,
+    createdAt: battle.created_at,
+    endsAt: battle.ends_at,
+  };
+}
+
+function saveMyMatch(battle) {
+  const savedMatch = createSavedMatchRecord(battle);
+  const currentMatches = readMyMatches();
+  const existingIndex = currentMatches.findIndex(
+    (match) => match.id === savedMatch.id || match.slug === savedMatch.slug,
+  );
+  const nextMatches =
+    existingIndex >= 0
+      ? currentMatches.map((match, index) => (index === existingIndex ? { ...match, ...savedMatch } : match))
+      : [savedMatch, ...currentMatches];
+
+  try {
+    window.localStorage.setItem(MY_MATCHES_KEY, JSON.stringify(nextMatches));
+  } catch (error) {
+    console.error("Could not save Fan War match", error);
+  }
+
+  return nextMatches;
 }
 
 function readStoredVote(battleId) {
@@ -346,6 +393,7 @@ export default function App() {
   const [isLoadingBattle, setIsLoadingBattle] = useState(() => Boolean(getBattleSlugFromUrl()));
   const [isCreatingBattle, setIsCreatingBattle] = useState(false);
   const [isCreatingFanCard, setIsCreatingFanCard] = useState(false);
+  const [myMatches, setMyMatches] = useState(() => readMyMatches());
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -371,6 +419,49 @@ export default function App() {
     }
   }, [match?.id]);
 
+  const loadBattleBySlug = useCallback(async (battleSlug) => {
+    if (!battleSlug) return false;
+
+    setIsLoadingBattle(true);
+    setLoadError("");
+    setBoardError("");
+
+    if (!isSupabaseConfigured || !supabase) {
+      setLoadError("Supabase is not configured. Check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.");
+      setIsLoadingBattle(false);
+      return false;
+    }
+
+    const { data, error } = await supabase.from("battles").select("*").eq("slug", battleSlug).single();
+
+    if (error) {
+      console.error("Battle fetch error:", error);
+      setLoadError("Battle not found");
+      setIsLoadingBattle(false);
+      return false;
+    }
+
+    const loadedMatch = mapBattleRowToMatch(data);
+    const storedVote = readNormalizedStoredVote(loadedMatch);
+    let loadedVoteStats = EMPTY_VOTE_STATS;
+
+    try {
+      loadedVoteStats = await fetchVoteCounts(loadedMatch.id);
+    } catch (voteCountError) {
+      console.error("Vote count fetch error:", voteCountError);
+      setBoardError("Could not load latest vote counts.");
+    }
+
+    setMatch(loadedMatch);
+    setSelectedSide(createSelectedSideFromMatch(loadedMatch, storedVote?.selectedSide));
+    setFan(createFanFromVoteRecord(storedVote));
+    setVoteRecord(storedVote);
+    setVoteStats(loadedVoteStats);
+    setScreen("battleBoard");
+    setIsLoadingBattle(false);
+    return true;
+  }, []);
+
   useEffect(() => {
     const battleSlug = getBattleSlugFromUrl();
     if (!battleSlug) {
@@ -378,58 +469,9 @@ export default function App() {
       return undefined;
     }
 
-    let isCancelled = false;
-
-    async function loadBattleFromUrl() {
-      setIsLoadingBattle(true);
-      setLoadError("");
-      setBoardError("");
-
-      if (!isSupabaseConfigured || !supabase) {
-        setLoadError("Supabase is not configured. Check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.");
-        setIsLoadingBattle(false);
-        return;
-      }
-
-      const { data, error } = await supabase.from("battles").select("*").eq("slug", battleSlug).single();
-
-      if (isCancelled) return;
-
-      if (error) {
-        console.error("Battle fetch error:", error);
-        setLoadError("Battle not found");
-        setIsLoadingBattle(false);
-        return;
-      }
-
-      const loadedMatch = mapBattleRowToMatch(data);
-      const storedVote = readNormalizedStoredVote(loadedMatch);
-      let loadedVoteStats = EMPTY_VOTE_STATS;
-
-      try {
-        loadedVoteStats = await fetchVoteCounts(loadedMatch.id);
-      } catch (voteCountError) {
-        console.error("Vote count fetch error:", voteCountError);
-        setBoardError("Could not load latest vote counts.");
-      }
-
-      if (isCancelled) return;
-
-      setMatch(loadedMatch);
-      setSelectedSide(createSelectedSideFromMatch(loadedMatch, storedVote?.selectedSide));
-      setFan(createFanFromVoteRecord(storedVote));
-      setVoteRecord(storedVote);
-      setVoteStats(loadedVoteStats);
-      setScreen("battleBoard");
-      setIsLoadingBattle(false);
-    }
-
-    loadBattleFromUrl();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, []);
+    void loadBattleBySlug(battleSlug);
+    return undefined;
+  }, [loadBattleBySlug]);
 
   const handleStartNewMatch = () => {
     window.history.pushState({}, "", "/");
@@ -441,6 +483,20 @@ export default function App() {
     setVoteRecord(null);
     setVoteStats(EMPTY_VOTE_STATS);
     setScreen("startMatch");
+  };
+
+  const handleOpenMyMatches = () => {
+    setLoadError("");
+    setBattleError("");
+    setMyMatches(readMyMatches());
+    setScreen("myMatches");
+  };
+
+  const handleOpenSavedMatch = async (savedMatch) => {
+    if (!savedMatch?.slug) return;
+
+    window.history.pushState({}, "", `/?battle=${savedMatch.slug}`);
+    await loadBattleBySlug(savedMatch.slug);
   };
 
   const handleCreateMatch = async (matchData) => {
@@ -498,6 +554,7 @@ export default function App() {
 
       const matchWithSupabaseBattle = mapBattleRowToMatch(data);
       const storedVote = readNormalizedStoredVote(matchWithSupabaseBattle);
+      setMyMatches(saveMyMatch(data));
       window.history.pushState({}, "", `/?battle=${data.slug}`);
 
       setMatch(matchWithSupabaseBattle);
@@ -685,6 +742,17 @@ export default function App() {
     return <NoticeScreen title={loadError} message="This battle link is unavailable or has been removed." onPrimaryAction={handleStartNewMatch} />;
   }
 
+  if (screen === "myMatches") {
+    return (
+      <MyMatches
+        matches={myMatches}
+        onOpenMatch={handleOpenSavedMatch}
+        onBack={() => setScreen("startMatch")}
+        onStartNewMatch={handleStartNewMatch}
+      />
+    );
+  }
+
   if (screen === "matchPreview" && match) {
     return (
       <MatchPreview
@@ -764,6 +832,8 @@ export default function App() {
     <StartMatch
       initialMatch={match}
       onCreateMatch={handleCreateMatch}
+      onOpenMyMatches={handleOpenMyMatches}
+      hasSavedMatches={myMatches.length > 0}
       submitError={battleError}
       isSubmitting={isCreatingBattle}
     />
