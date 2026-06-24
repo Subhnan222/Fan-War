@@ -35,6 +35,12 @@ export default function MatchPreview({ match, onBackToEdit, onContinue }) {
         scale: 2,
         backgroundColor: null,
         useCORS: true,
+        onclone: (documentClone) => {
+          const clonedCard = documentClone.querySelector(".vs-card");
+          if (clonedCard) {
+            clonedCard.style.transform = "none";
+          }
+        },
       });
 
       const link = document.createElement("a");
@@ -64,7 +70,7 @@ export default function MatchPreview({ match, onBackToEdit, onContinue }) {
         document.body.removeChild(textarea);
       }
 
-      setCopyStatus("Link copied");
+      setCopyStatus("Voting link copied");
       window.setTimeout(() => setCopyStatus(""), 2200);
     } catch (error) {
       console.error("Could not copy battle link", error);
@@ -77,6 +83,7 @@ export default function MatchPreview({ match, onBackToEdit, onContinue }) {
       <div className="cinema-grid" aria-hidden="true" />
       <section className="match-preview-layout" aria-label="Generated VS match card preview">
         <div className="preview-card-stage">
+          <h2>Your VS Poster</h2>
           <VSMatchCard match={match} cardRef={cardRef} />
         </div>
 
@@ -84,8 +91,38 @@ export default function MatchPreview({ match, onBackToEdit, onContinue }) {
           <div className="preview-control-copy">
             <span className="eyebrow">Match Created</span>
             <h1>Match Created</h1>
-            <p>Your Fan War is live. Share the poster and open the Battle Board.</p>
+            <p>Your Fan War is live.</p>
           </div>
+
+          <div className="preview-actions">
+            <button className="preview-action primary open-board-action" type="button" onClick={onContinue}>
+              <Flag aria-hidden="true" size={24} />
+              Open Live Match
+            </button>
+            <div className="preview-secondary-actions">
+              <button className="preview-action secondary" type="button" onClick={handleDownload}>
+                <Download aria-hidden="true" size={20} />
+                Download Poster
+              </button>
+              <button className="preview-action secondary" type="button" onClick={handleCopyLink}>
+                <Copy aria-hidden="true" size={20} />
+                Copy Voting Link
+              </button>
+            </div>
+            <button className="preview-action ghost" type="button" onClick={onBackToEdit}>
+              <ArrowLeft aria-hidden="true" size={20} />
+              Edit Match
+            </button>
+          </div>
+
+          <section className="preview-next-steps" aria-label="What to do next">
+            <strong>Your match is ready.</strong>
+            <ol>
+              <li><span>1</span> Download poster</li>
+              <li><span>2</span> Share with fans</li>
+              <li><span>3</span> Open live match</li>
+            </ol>
+          </section>
 
           <dl className="match-summary preview-summary">
             <div>
@@ -97,42 +134,6 @@ export default function MatchPreview({ match, onBackToEdit, onContinue }) {
               <dd>{match.duration}</dd>
             </div>
           </dl>
-
-          <section className="preview-next-steps" aria-label="What to do next">
-            <strong>Your match is ready.</strong>
-            <ol>
-              <li><span>1</span> Download poster</li>
-              <li><span>2</span> Share link</li>
-              <li><span>3</span> Start voting</li>
-            </ol>
-          </section>
-
-          <div className="preview-link-box">
-            <span>Share this link with fans</span>
-            <strong>{battleLink}</strong>
-            <small>Fans open this link to vote.</small>
-          </div>
-
-          <div className="preview-actions">
-            <button className="preview-action primary open-board-action" type="button" onClick={onContinue}>
-              <Flag aria-hidden="true" size={24} />
-              Open Battle Board - Start Voting
-            </button>
-            <div className="preview-secondary-actions">
-              <button className="preview-action secondary" type="button" onClick={handleDownload}>
-                <Download aria-hidden="true" size={20} />
-                Download VS Poster
-              </button>
-              <button className="preview-action secondary" type="button" onClick={handleCopyLink}>
-                <Copy aria-hidden="true" size={20} />
-                Copy Fan Voting Link
-              </button>
-            </div>
-            <button className="preview-action ghost" type="button" onClick={onBackToEdit}>
-              <ArrowLeft aria-hidden="true" size={20} />
-              Back to Edit
-            </button>
-          </div>
 
           <div className="preview-status-row" aria-live="polite">
             {copyStatus && <span>{copyStatus}</span>}

@@ -281,7 +281,7 @@ function AlreadyVotedScreen({ match, voteRecord, onViewFanCard, onBackToBattle }
 
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(message);
-        setStatus("Battle link copied");
+        setStatus("Voting link copied");
         window.setTimeout(() => setStatus(""), 2200);
         return;
       }
@@ -316,7 +316,7 @@ function AlreadyVotedScreen({ match, voteRecord, onViewFanCard, onBackToBattle }
             View My Fan Card
           </button>
           <button className="preview-action secondary" type="button" onClick={onBackToBattle}>
-            Back to Battle Board
+            Back to Live Match
           </button>
           <button className="preview-action ghost" type="button" onClick={handleShareBattle}>
             Share Battle
@@ -345,6 +345,10 @@ export default function App() {
   const [isLoadingBattle, setIsLoadingBattle] = useState(() => Boolean(getBattleSlugFromUrl()));
   const [isCreatingBattle, setIsCreatingBattle] = useState(false);
   const [isCreatingFanCard, setIsCreatingFanCard] = useState(false);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [screen]);
 
   const refreshVoteCounts = useCallback(async (battleId = match?.id) => {
     if (!battleId) return EMPTY_VOTE_STATS;
@@ -443,7 +447,7 @@ export default function App() {
     if (!isSupabaseConfigured || !supabase) {
       const error = new Error("Supabase is not configured. Check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.");
       console.error("Battle insert error:", error);
-      setBattleError(error.message);
+      setBattleError("Could not create match. Please check internet and try again.");
       setIsCreatingBattle(false);
       return;
     }
@@ -480,7 +484,7 @@ export default function App() {
 
       if (error) {
         console.error("Battle insert error:", error);
-        setBattleError(error.message || "Could not create battle.");
+        setBattleError("Could not create match. Please check internet and try again.");
         return;
       }
 
@@ -502,7 +506,7 @@ export default function App() {
         setBattleError("Image upload failed. Check Supabase Storage policy.");
       } else {
         console.error("Battle insert error:", error);
-        setBattleError(error.message || "Could not create battle.");
+        setBattleError("Could not create match. Please check internet and try again.");
       }
     } finally {
       setIsCreatingBattle(false);
@@ -653,7 +657,7 @@ export default function App() {
   };
 
   if (isLoadingBattle) {
-    return <NoticeScreen title="Loading Battle" message="Opening the live Fan War board." />;
+    return <NoticeScreen title="Loading Match" message="Opening the live Fan War match." />;
   }
 
   if (loadError) {

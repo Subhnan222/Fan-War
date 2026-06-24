@@ -122,7 +122,7 @@ export default function VoteSuccess({ match, selectedSide, fan, battleLink, onBa
   const handleCopyLink = async () => {
     try {
       const copied = await copyBattleLink();
-      setStatus(copied ? "Battle link copied" : "Copy unavailable");
+      setStatus(copied ? "Voting link copied" : "Copy unavailable");
       window.setTimeout(() => setStatus(""), 2200);
     } catch (error) {
       console.error("Could not copy battle link", error);
@@ -162,10 +162,10 @@ export default function VoteSuccess({ match, selectedSide, fan, battleLink, onBa
             </button>
             <button className="preview-action secondary" type="button" onClick={handleCopyLink}>
               <Copy aria-hidden="true" size={20} />
-              Copy Battle Link
+              Copy Voting Link
             </button>
             <button className="preview-action ghost" type="button" onClick={onBackToBattle}>
-              Back to Battle Board
+              Back to Live Match
             </button>
           </div>
 

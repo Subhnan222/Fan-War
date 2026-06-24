@@ -183,7 +183,7 @@ export default function BattleBoard({
         document.body.removeChild(textarea);
       }
 
-      setWinnerStatus("Battle link copied");
+      setWinnerStatus("Voting link copied");
       window.setTimeout(() => setWinnerStatus(""), 2200);
     } catch (error) {
       console.error("Could not copy battle link", error);
@@ -393,7 +393,7 @@ export default function BattleBoard({
             <div className="preview-secondary-actions">
               <button className="preview-action ghost" type="button" onClick={copyBattleLink}>
                 <Copy aria-hidden="true" size={20} />
-                Copy Battle Link
+                Copy Voting Link
               </button>
               <button className="preview-action ghost" type="button" onClick={onStartNewMatch}>
                 Start New Match

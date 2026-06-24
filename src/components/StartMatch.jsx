@@ -189,7 +189,7 @@ export default function StartMatch({ initialMatch, onCreateMatch, submitError = 
           <div className="cta-zone full-span">
             <button className="create-match-button" type="submit" disabled={!canCreate || isSubmitting}>
               <Swords aria-hidden="true" size={26} />
-              <span>{isSubmitting ? "Creating Match..." : "CREATE MATCH"}</span>
+              <span>{isSubmitting ? "Creating your match..." : "CREATE MATCH"}</span>
               <Zap aria-hidden="true" size={30} />
             </button>
             {submitError ? (
@@ -197,7 +197,7 @@ export default function StartMatch({ initialMatch, onCreateMatch, submitError = 
                 {submitError}
               </p>
             ) : null}
-            <p>You can edit this match before sharing.</p>
+            <p>{isSubmitting ? "Uploading images and preparing your Fan War" : "You can edit this match before sharing."}</p>
           </div>
         </form>
       </section>

@@ -78,7 +78,7 @@ export default function VoteSide({ match, voteStats, onVoteSide, onBackToBattle 
         </section>
 
         <button className="vote-side-back" type="button" onClick={onBackToBattle}>
-          Back to Battle Board
+          Back to Live Match
         </button>
       </section>
     </main>
