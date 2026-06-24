@@ -20,7 +20,7 @@ function createDownloadName(match) {
   return `fan-war-${slugify(match.creatorA.name)}-vs-${slugify(match.creatorB.name)}.png`;
 }
 
-export default function MatchPreview({ match, onBackToEdit, onContinue }) {
+export default function MatchPreview({ match, onBackToEdit, onContinue, onTrackEvent }) {
   const cardRef = useRef(null);
   const [copyStatus, setCopyStatus] = useState("");
   const [downloadStatus, setDownloadStatus] = useState("");
@@ -71,6 +71,7 @@ export default function MatchPreview({ match, onBackToEdit, onContinue }) {
       }
 
       setCopyStatus("Voting link copied");
+      onTrackEvent?.("copy_link_clicked", { battleId: match.id });
       window.setTimeout(() => setCopyStatus(""), 2200);
     } catch (error) {
       console.error("Could not copy battle link", error);

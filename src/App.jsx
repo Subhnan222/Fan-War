@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import BattleBoard from "./components/BattleBoard.jsx";
 import FanIdentity from "./components/FanIdentity.jsx";
 import MatchPreview from "./components/MatchPreview.jsx";
@@ -96,6 +96,24 @@ function getBattleSlugFromUrl() {
 
 function getVoteStorageKey(battleId) {
   return `fanwar_vote_${battleId}`;
+}
+
+function getAnalyticsSessionId() {
+  const storageKey = "fanwar_session_id";
+
+  try {
+    const existingSessionId = window.localStorage.getItem(storageKey);
+    if (existingSessionId) return existingSessionId;
+
+    const sessionId =
+      window.crypto?.randomUUID?.() ||
+      `fanwar-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    window.localStorage.setItem(storageKey, sessionId);
+    return sessionId;
+  } catch (error) {
+    console.warn("Could not access analytics session storage:", error);
+    return `fanwar-session-${Date.now()}`;
+  }
 }
 
 function readStoredVote(battleId) {
@@ -345,10 +363,61 @@ export default function App() {
   const [isLoadingBattle, setIsLoadingBattle] = useState(() => Boolean(getBattleSlugFromUrl()));
   const [isCreatingBattle, setIsCreatingBattle] = useState(false);
   const [isCreatingFanCard, setIsCreatingFanCard] = useState(false);
+  const lastBattleViewRef = useRef("");
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [screen]);
+
+  const trackEvent = useCallback(
+    async (eventType, extraData = {}) => {
+      if (!isSupabaseConfigured || !supabase) {
+        console.warn("Analytics skipped: Supabase is not configured.");
+        return;
+      }
+
+      const battleId = extraData.battleId || extraData.battle_id || match?.id;
+
+      if (!battleId) {
+        console.warn("Analytics skipped: missing battle_id for event", eventType);
+        return;
+      }
+
+      const sideValue = extraData.selectedSide || extraData.selected_side || selectedSide?.side || null;
+      const selectedSideValue = typeof sideValue === "string" ? sideValue : sideValue?.side || null;
+      const fanName = extraData.fanName || extraData.fan_name || fan?.name || null;
+
+      const payload = {
+        battle_id: battleId,
+        event_type: eventType,
+        selected_side: selectedSideValue,
+        fan_name: fanName,
+        session_id: getAnalyticsSessionId(),
+        created_at: new Date().toISOString(),
+      };
+
+      try {
+        const { error } = await supabase.from("analytics_events").insert(payload);
+
+        if (error) {
+          console.warn("Analytics insert failed:", error);
+        }
+      } catch (error) {
+        console.warn("Analytics insert failed:", error);
+      }
+    },
+    [fan?.name, match?.id, selectedSide?.side],
+  );
+
+  useEffect(() => {
+    if (screen !== "battleBoard" || !match?.id) return;
+
+    const viewKey = `${match.id}:${screen}`;
+    if (lastBattleViewRef.current === viewKey) return;
+
+    lastBattleViewRef.current = viewKey;
+    void trackEvent("battle_view", { battleId: match.id });
+  }, [match?.id, screen, trackEvent]);
 
   const refreshVoteCounts = useCallback(async (battleId = match?.id) => {
     if (!battleId) return EMPTY_VOTE_STATS;
@@ -515,6 +584,8 @@ export default function App() {
 
   const handleVoteNow = () => {
     if (!match) return;
+    void trackEvent("vote_now_clicked", { battleId: match.id });
+
     if (isMatchEnded(match)) {
       setBoardError("This battle has ended. Voting is closed.");
       setScreen("battleBoard");
@@ -563,6 +634,10 @@ export default function App() {
     setSelectedSide(side);
     setVoteRecord(null);
     setVoteError("");
+    void trackEvent("side_selected", {
+      battleId: match.id,
+      selectedSide: side.side,
+    });
     setScreen("fanIdentity");
   };
 
@@ -617,6 +692,11 @@ export default function App() {
       }
 
       console.log("Vote inserted:", data);
+      void trackEvent("vote_completed", {
+        battleId: match.id,
+        selectedSide: selectedSide.side,
+        fanName: fanData.name,
+      });
 
       const nextVoteRecord = createLocalVoteRecord(
         match,
@@ -656,6 +736,11 @@ export default function App() {
     setScreen("voteSuccess");
   };
 
+  const handleReturnToBattleBoard = () => {
+    lastBattleViewRef.current = "";
+    setScreen("battleBoard");
+  };
+
   if (isLoadingBattle) {
     return <NoticeScreen title="Loading Match" message="Opening the live Fan War match." />;
   }
@@ -669,7 +754,8 @@ export default function App() {
       <MatchPreview
         match={match}
         onBackToEdit={handleStartNewMatch}
-        onContinue={() => setScreen("battleBoard")}
+        onContinue={handleReturnToBattleBoard}
+        onTrackEvent={trackEvent}
       />
     );
   }
@@ -684,6 +770,7 @@ export default function App() {
         onBackToPreview={() => setScreen("matchPreview")}
         onRefreshVotes={() => refreshVoteCounts(match.id)}
         onStartNewMatch={handleStartNewMatch}
+        onTrackEvent={trackEvent}
         statusMessage={boardError}
       />
     );
@@ -695,7 +782,7 @@ export default function App() {
         match={match}
         voteStats={voteStats}
         onVoteSide={handleVoteSide}
-        onBackToBattle={() => setScreen("battleBoard")}
+        onBackToBattle={handleReturnToBattleBoard}
       />
     );
   }
@@ -719,7 +806,7 @@ export default function App() {
         match={match}
         voteRecord={voteRecord}
         onViewFanCard={handleViewSavedFanCard}
-        onBackToBattle={() => setScreen("battleBoard")}
+        onBackToBattle={handleReturnToBattleBoard}
       />
     );
   }
@@ -731,7 +818,8 @@ export default function App() {
         selectedSide={selectedSide}
         fan={fan}
         battleLink={match.battleLink}
-        onBackToBattle={() => setScreen("battleBoard")}
+        onBackToBattle={handleReturnToBattleBoard}
+        onTrackEvent={trackEvent}
       />
     );
   }

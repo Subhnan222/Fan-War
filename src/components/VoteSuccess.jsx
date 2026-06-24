@@ -71,7 +71,7 @@ function FanVotedCard({ match, selectedSide, fan, cardRef }) {
   );
 }
 
-export default function VoteSuccess({ match, selectedSide, fan, battleLink, onBackToBattle }) {
+export default function VoteSuccess({ match, selectedSide, fan, battleLink, onBackToBattle, onTrackEvent }) {
   const cardRef = useRef(null);
   const [status, setStatus] = useState("");
 
@@ -100,6 +100,11 @@ export default function VoteSuccess({ match, selectedSide, fan, battleLink, onBa
   const handleDownload = async () => {
     if (!cardRef.current) return;
     setStatus("Preparing fan card...");
+    onTrackEvent?.("fan_card_downloaded", {
+      battleId: match.id,
+      selectedSide: selectedSide.side,
+      fanName: fan.name,
+    });
 
     try {
       const canvas = await html2canvas(cardRef.current, {
@@ -123,6 +128,13 @@ export default function VoteSuccess({ match, selectedSide, fan, battleLink, onBa
     try {
       const copied = await copyBattleLink();
       setStatus(copied ? "Voting link copied" : "Copy unavailable");
+      if (copied) {
+        onTrackEvent?.("copy_link_clicked", {
+          battleId: match.id,
+          selectedSide: selectedSide.side,
+          fanName: fan.name,
+        });
+      }
       window.setTimeout(() => setStatus(""), 2200);
     } catch (error) {
       console.error("Could not copy battle link", error);
@@ -131,6 +143,11 @@ export default function VoteSuccess({ match, selectedSide, fan, battleLink, onBa
   };
 
   const handleWhatsAppShare = () => {
+    onTrackEvent?.("whatsapp_share_clicked", {
+      battleId: match.id,
+      selectedSide: selectedSide.side,
+      fanName: fan.name,
+    });
     const message = `${fan.name} voted for Team ${selectedSide.name} in Fan War. Vote here: ${battleLink}`;
     const shareUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(shareUrl, "_blank", "noopener,noreferrer");

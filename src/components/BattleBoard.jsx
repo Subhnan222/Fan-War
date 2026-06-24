@@ -96,6 +96,7 @@ export default function BattleBoard({
   onBackToPreview,
   onRefreshVotes,
   onStartNewMatch,
+  onTrackEvent,
   statusMessage = "",
 }) {
   const [remaining, setRemaining] = useState(() => getRemaining(match.endsAt));
@@ -184,6 +185,7 @@ export default function BattleBoard({
       }
 
       setWinnerStatus("Voting link copied");
+      onTrackEvent?.("copy_link_clicked", { battleId: match.id });
       window.setTimeout(() => setWinnerStatus(""), 2200);
     } catch (error) {
       console.error("Could not copy battle link", error);
@@ -194,6 +196,7 @@ export default function BattleBoard({
   const handleDownloadWinnerCard = async () => {
     if (!winnerCardRef.current) return;
     setWinnerStatus("Preparing winner card...");
+    onTrackEvent?.("winner_card_downloaded", { battleId: match.id });
 
     try {
       const canvas = await html2canvas(winnerCardRef.current, {
@@ -214,6 +217,7 @@ export default function BattleBoard({
   };
 
   const handleShareWinner = () => {
+    onTrackEvent?.("whatsapp_share_clicked", { battleId: match.id });
     const message = stats.isTie
       ? `Fan War ended in a tie!\nFinal votes: ${formatNumber(stats.creatorAVotes)} vs ${formatNumber(stats.creatorBVotes)}\n${battleLink}`
       : `${stats.winnerName} won the Fan War!\nFinal votes: ${formatNumber(stats.creatorAVotes)} vs ${formatNumber(stats.creatorBVotes)}\nFans decided the winner.\n${battleLink}`;
