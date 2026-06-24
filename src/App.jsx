@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import BattleBoard from "./components/BattleBoard.jsx";
 import FanIdentity from "./components/FanIdentity.jsx";
 import MatchPreview from "./components/MatchPreview.jsx";
 import StartMatch from "./components/StartMatch.jsx";
 import VoteSide from "./components/VoteSide.jsx";
 import VoteSuccess from "./components/VoteSuccess.jsx";
+import { trackEvent } from "./lib/analytics.js";
 import { isSupabaseConfigured, supabase } from "./lib/supabaseClient.js";
 
 const STORAGE_BUCKET = "fan-war-assets";
@@ -96,24 +97,6 @@ function getBattleSlugFromUrl() {
 
 function getVoteStorageKey(battleId) {
   return `fanwar_vote_${battleId}`;
-}
-
-function getAnalyticsSessionId() {
-  const storageKey = "fanwar_session_id";
-
-  try {
-    const existingSessionId = window.localStorage.getItem(storageKey);
-    if (existingSessionId) return existingSessionId;
-
-    const sessionId =
-      window.crypto?.randomUUID?.() ||
-      `fanwar-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-    window.localStorage.setItem(storageKey, sessionId);
-    return sessionId;
-  } catch (error) {
-    console.warn("Could not access analytics session storage:", error);
-    return `fanwar-session-${Date.now()}`;
-  }
 }
 
 function readStoredVote(battleId) {
@@ -363,61 +346,15 @@ export default function App() {
   const [isLoadingBattle, setIsLoadingBattle] = useState(() => Boolean(getBattleSlugFromUrl()));
   const [isCreatingBattle, setIsCreatingBattle] = useState(false);
   const [isCreatingFanCard, setIsCreatingFanCard] = useState(false);
-  const lastBattleViewRef = useRef("");
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [screen]);
 
-  const trackEvent = useCallback(
-    async (eventType, extraData = {}) => {
-      if (!isSupabaseConfigured || !supabase) {
-        console.warn("Analytics skipped: Supabase is not configured.");
-        return;
-      }
-
-      const battleId = extraData.battleId || extraData.battle_id || match?.id;
-
-      if (!battleId) {
-        console.warn("Analytics skipped: missing battle_id for event", eventType);
-        return;
-      }
-
-      const sideValue = extraData.selectedSide || extraData.selected_side || selectedSide?.side || null;
-      const selectedSideValue = typeof sideValue === "string" ? sideValue : sideValue?.side || null;
-      const fanName = extraData.fanName || extraData.fan_name || fan?.name || null;
-
-      const payload = {
-        battle_id: battleId,
-        event_type: eventType,
-        selected_side: selectedSideValue,
-        fan_name: fanName,
-        session_id: getAnalyticsSessionId(),
-        created_at: new Date().toISOString(),
-      };
-
-      try {
-        const { error } = await supabase.from("analytics_events").insert(payload);
-
-        if (error) {
-          console.warn("Analytics insert failed:", error);
-        }
-      } catch (error) {
-        console.warn("Analytics insert failed:", error);
-      }
-    },
-    [fan?.name, match?.id, selectedSide?.side],
-  );
-
   useEffect(() => {
     if (screen !== "battleBoard" || !match?.id) return;
-
-    const viewKey = `${match.id}:${screen}`;
-    if (lastBattleViewRef.current === viewKey) return;
-
-    lastBattleViewRef.current = viewKey;
     void trackEvent("battle_view", { battleId: match.id });
-  }, [match?.id, screen, trackEvent]);
+  }, [match?.id, screen]);
 
   const refreshVoteCounts = useCallback(async (battleId = match?.id) => {
     if (!battleId) return EMPTY_VOTE_STATS;
@@ -737,7 +674,6 @@ export default function App() {
   };
 
   const handleReturnToBattleBoard = () => {
-    lastBattleViewRef.current = "";
     setScreen("battleBoard");
   };
 
