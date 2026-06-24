@@ -1,6 +1,6 @@
 import html2canvas from "html2canvas";
 import { ArrowLeft, Copy, Download, Flag } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import VSMatchCard from "./VSMatchCard.jsx";
 
 function slugify(value) {
@@ -20,21 +20,72 @@ function createDownloadName(match) {
   return `fan-war-${slugify(match.creatorA.name)}-vs-${slugify(match.creatorB.name)}.png`;
 }
 
+async function waitForImages(element) {
+  const images = Array.from(element.querySelectorAll("img"));
+  await Promise.all(
+    images.map((img) => {
+      if (img.complete) return Promise.resolve();
+
+      return new Promise((resolve) => {
+        img.onload = resolve;
+        img.onerror = resolve;
+      });
+    }),
+  );
+}
+
+function canvasToBlob(canvas) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) {
+        resolve(blob);
+      } else {
+        reject(new Error("Could not create poster image."));
+      }
+    }, "image/png");
+  });
+}
+
 export default function MatchPreview({ match, onBackToEdit, onContinue, onTrackEvent }) {
   const cardRef = useRef(null);
   const [copyStatus, setCopyStatus] = useState("");
   const [downloadStatus, setDownloadStatus] = useState("");
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [posterImageUrl, setPosterImageUrl] = useState("");
   const battleLink = useMemo(() => match.battleLink || createBattleLink(match), [match]);
 
+  useEffect(() => {
+    return () => {
+      if (posterImageUrl) {
+        URL.revokeObjectURL(posterImageUrl);
+      }
+    };
+  }, [posterImageUrl]);
+
   const handleDownload = async () => {
-    if (!cardRef.current) return;
-    setDownloadStatus("Preparing card...");
+    const cardElement = cardRef.current;
+    if (!cardElement || isDownloading) return;
+
+    setIsDownloading(true);
+    setDownloadStatus("Preparing poster...");
+
+    if (posterImageUrl) {
+      URL.revokeObjectURL(posterImageUrl);
+      setPosterImageUrl("");
+    }
 
     try {
-      const canvas = await html2canvas(cardRef.current, {
-        scale: 2,
+      await waitForImages(cardElement);
+
+      const canvas = await html2canvas(cardElement, {
+        scale: Math.min(2, window.devicePixelRatio || 2),
         backgroundColor: null,
         useCORS: true,
+        allowTaint: false,
+        logging: false,
+        imageTimeout: 15000,
+        scrollX: 0,
+        scrollY: -window.scrollY,
         onclone: (documentClone) => {
           const clonedCard = documentClone.querySelector(".vs-card");
           if (clonedCard) {
@@ -43,15 +94,28 @@ export default function MatchPreview({ match, onBackToEdit, onContinue, onTrackE
         },
       });
 
+      const blob = await canvasToBlob(canvas);
+      const blobUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
+      link.href = blobUrl;
       link.download = createDownloadName(match);
-      link.href = canvas.toDataURL("image/png");
+      document.body.appendChild(link);
       link.click();
-      setDownloadStatus("Download ready");
+      link.remove();
+
+      setPosterImageUrl(blobUrl);
+      setDownloadStatus("Poster ready. If download does not start, open the image and long-press to save.");
     } catch (error) {
       console.error("Could not download VS card", error);
-      setDownloadStatus("Download failed");
+      setDownloadStatus("Could not download poster. Try again.");
+    } finally {
+      setIsDownloading(false);
     }
+  };
+
+  const handleOpenPosterImage = () => {
+    if (!posterImageUrl) return;
+    window.open(posterImageUrl, "_blank", "noopener,noreferrer");
   };
 
   const handleCopyLink = async () => {
@@ -101,9 +165,9 @@ export default function MatchPreview({ match, onBackToEdit, onContinue, onTrackE
               Open Live Match
             </button>
             <div className="preview-secondary-actions">
-              <button className="preview-action secondary" type="button" onClick={handleDownload}>
+              <button className="preview-action secondary" type="button" onClick={handleDownload} disabled={isDownloading}>
                 <Download aria-hidden="true" size={20} />
-                Download Poster
+                {isDownloading ? "Preparing poster..." : "Download Poster"}
               </button>
               <button className="preview-action secondary" type="button" onClick={handleCopyLink}>
                 <Copy aria-hidden="true" size={20} />
@@ -139,6 +203,11 @@ export default function MatchPreview({ match, onBackToEdit, onContinue, onTrackE
           <div className="preview-status-row" aria-live="polite">
             {copyStatus && <span>{copyStatus}</span>}
             {downloadStatus && <span>{downloadStatus}</span>}
+            {posterImageUrl ? (
+              <button className="download-fallback-action" type="button" onClick={handleOpenPosterImage}>
+                Open image to save
+              </button>
+            ) : null}
           </div>
         </aside>
       </section>
