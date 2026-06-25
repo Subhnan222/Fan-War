@@ -25,8 +25,8 @@ export default function ImageUploadBox({ id, label, imageUrl, onImageChange }) {
           <span className="upload-icon">
             <UploadCloud aria-hidden="true" size={30} />
           </span>
-          <strong>Click to upload</strong>
-          <em>PNG, JPG up to 5MB</em>
+          <strong>Upload</strong>
+          <em>Optional</em>
         </span>
         <span className="upload-preview" aria-hidden={!imageUrl}>
           {imageUrl && <img src={imageUrl} alt={`${label} preview`} />}

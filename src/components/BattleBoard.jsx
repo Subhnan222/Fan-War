@@ -153,6 +153,18 @@ export default function BattleBoard({
   }, [match, voteStats]);
 
   const countdown = formatCountdown(remaining);
+  const countdownUnits = countdown.days > 0
+    ? [
+        { value: countdown.days, label: "Days" },
+        { value: countdown.hours, label: "Hours" },
+        { value: countdown.minutes, label: "Mins" },
+        { value: countdown.seconds, label: "Secs" },
+      ]
+    : [
+        { value: countdown.hours, label: "Hours" },
+        { value: countdown.minutes, label: "Mins" },
+        { value: countdown.seconds, label: "Secs" },
+      ];
   const battleEnded = remaining <= 0;
   const battleTitle = formatBattleTitle(match.title);
   const votedCreatorName = voteRecord?.selectedCreatorName || voteRecord?.name || "";
@@ -184,7 +196,7 @@ export default function BattleBoard({
         document.body.removeChild(textarea);
       }
 
-      setWinnerStatus("Voting link copied");
+      setWinnerStatus("Link copied");
       onTrackEvent?.("copy_link_clicked", { battleId: match.id });
       window.setTimeout(() => setWinnerStatus(""), 2200);
     } catch (error) {
@@ -239,7 +251,7 @@ export default function BattleBoard({
           </p>
           <div className={`live-badge ${battleEnded ? "ended" : ""}`}>
             <Flame aria-hidden="true" size={16} />
-            {battleEnded ? "BATTLE ENDED" : "LIVE FAN BATTLE"}
+            {battleEnded ? "BATTLE ENDED" : "LIVE MATCH"}
           </div>
           <h1>{battleTitle}</h1>
         </header>
@@ -330,15 +342,13 @@ export default function BattleBoard({
           ) : (
             <>
               <span>ENDS IN</span>
-              <div className="countdown-grid" aria-label="Countdown">
-                <strong>{String(countdown.days).padStart(2, "0")}</strong>
-                <strong>{String(countdown.hours).padStart(2, "0")}</strong>
-                <strong>{String(countdown.minutes).padStart(2, "0")}</strong>
-                <strong>{String(countdown.seconds).padStart(2, "0")}</strong>
-                <small>Days</small>
-                <small>Hours</small>
-                <small>Mins</small>
-                <small>Secs</small>
+              <div className={`countdown-grid ${countdownUnits.length === 3 ? "compact" : ""}`} aria-label="Countdown">
+                {countdownUnits.map((unit) => (
+                  <strong key={unit.label}>{String(unit.value).padStart(2, "0")}</strong>
+                ))}
+                {countdownUnits.map((unit) => (
+                  <small key={`${unit.label}-label`}>{unit.label}</small>
+                ))}
               </div>
             </>
           )}
@@ -371,7 +381,7 @@ export default function BattleBoard({
             {battleEnded ? "VOTING CLOSED" : votedCreatorName ? "VIEW MY VOTE" : "VOTE NOW"}
           </button>
           <p>
-            Choose a side. <strong>Cast your vote.</strong> Share your card.
+            Vote and get your fan card.
           </p>
           <button className="battle-back-button" type="button" onClick={onBackToPreview}>
             Back to VS Card
@@ -391,13 +401,13 @@ export default function BattleBoard({
               </button>
               <button className="preview-action secondary" type="button" onClick={handleShareWinner}>
                 <MessageCircle aria-hidden="true" size={20} />
-                Share Result WhatsApp
+                Share Result
               </button>
             </div>
             <div className="preview-secondary-actions">
               <button className="preview-action ghost" type="button" onClick={copyBattleLink}>
                 <Copy aria-hidden="true" size={20} />
-                Copy Voting Link
+                Copy Link
               </button>
               <button className="preview-action ghost" type="button" onClick={onStartNewMatch}>
                 Start New Match

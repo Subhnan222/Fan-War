@@ -79,21 +79,21 @@ export default function WinnerCard({ match, result, cardRef }) {
           </dd>
         </div>
         <div>
-          <dt>Total Fans Voted</dt>
+          <dt>Final Votes</dt>
           <dd>
             <UsersRound aria-hidden="true" size={16} />
             {formatNumber(result.totalVotes)}
           </dd>
         </div>
         <div>
-          <dt>Battle Duration</dt>
+          <dt>Time</dt>
           <dd>{match.duration}</dd>
         </div>
       </dl>
 
       <footer>
-        <span>Fans decided the winner.</span>
-        <strong>Create your own Fan War.</strong>
+        <span>Fans decided.</span>
+        <strong>Create Fan War.</strong>
       </footer>
     </article>
   );

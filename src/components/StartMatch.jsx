@@ -1,19 +1,11 @@
-import {
-  CalendarDays,
-  Clock3,
-  Crown,
-  ListChecks,
-  Swords,
-  Zap,
-} from "lucide-react";
+import { Clock3, Crown, ListChecks, Swords, Zap } from "lucide-react";
 import { useState } from "react";
 import ImageUploadBox from "./ImageUploadBox.jsx";
 
 const DURATIONS = [
-  { label: "24 Hours", value: "24", unit: "Hours", hours: 24, icon: Clock3 },
-  { label: "3 Days", value: "3", unit: "Days", hours: 72, icon: CalendarDays },
-  { label: "5 Days", value: "5", unit: "Days", hours: 120, icon: CalendarDays },
-  { label: "7 Days", value: "7", unit: "Days", hours: 168, icon: CalendarDays },
+  { label: "1 Hour", value: "1", unit: "Hour", hours: 1, icon: Clock3 },
+  { label: "5 Hours", value: "5", unit: "Hours", hours: 5, icon: Clock3 },
+  { label: "10 Hours", value: "10", unit: "Hours", hours: 10, icon: Clock3 },
 ];
 
 const emptyForm = {
@@ -28,7 +20,7 @@ const emptyForm = {
     previewUrl: "",
     file: null,
   },
-  duration: "5 Days",
+  duration: "1 Hour",
 };
 
 function formFromMatch(match) {
@@ -46,7 +38,7 @@ function formFromMatch(match) {
       previewUrl: match.creatorB?.imageUrl || "",
       file: null,
     },
-    duration: match.duration || "5 Days",
+    duration: match.duration || "1 Hour",
   };
 }
 
@@ -126,16 +118,14 @@ export default function StartMatch({
         <form className="match-form" onSubmit={handleSubmit}>
           <div className="hero-panel full-span">
             <div className="hero-copy">
-              <h1>
-                Start a <span>Fan War</span> Match
-              </h1>
-              <p>Create a VS battle card and let fans vote for their favorite.</p>
+              <h1>Start Match</h1>
+              <p>Two sides. One winner.</p>
             </div>
             <div className="title-divider" aria-hidden="true" />
           </div>
 
           <label className="form-field title-field full-span">
-            <span>1. Battle title</span>
+            <span>1. Match title</span>
             <input
               type="text"
               value={form.title}
@@ -146,7 +136,7 @@ export default function StartMatch({
 
           <section className="creator-card creator-a-card">
             <label className="form-field">
-              <span>2. Creator A name</span>
+              <span>2. Side A name</span>
               <input
                 type="text"
                 value={form.creatorAName}
@@ -156,7 +146,7 @@ export default function StartMatch({
             </label>
             <ImageUploadBox
               id="creator-a-image"
-              label="3. Creator A image / logo"
+              label="3. Side A photo"
               imageUrl={form.creatorAImage.previewUrl}
               onImageChange={(image) => updateCreatorImage("creatorAImage", image, "Creator A")}
             />
@@ -164,7 +154,7 @@ export default function StartMatch({
 
           <section className="creator-card creator-b-card">
             <label className="form-field">
-              <span>4. Creator B name</span>
+              <span>4. Side B name</span>
               <input
                 type="text"
                 value={form.creatorBName}
@@ -174,7 +164,7 @@ export default function StartMatch({
             </label>
             <ImageUploadBox
               id="creator-b-image"
-              label="5. Creator B image / logo"
+              label="5. Side B photo"
               imageUrl={form.creatorBImage.previewUrl}
               onImageChange={(image) => updateCreatorImage("creatorBImage", image, "Creator B")}
             />
@@ -182,7 +172,7 @@ export default function StartMatch({
 
           <section className="choice-section duration-section full-span">
             <div className="section-label">
-              <span>6. Battle duration</span>
+              <span>6. Time</span>
             </div>
             <div className="duration-grid">
               {DURATIONS.map((duration) => (
@@ -211,7 +201,7 @@ export default function StartMatch({
                 {submitError}
               </p>
             ) : null}
-            <p>{isSubmitting ? "Uploading images and preparing your Fan War" : "You can edit this match before sharing."}</p>
+            {isSubmitting ? <p>Uploading images and preparing your Fan War</p> : null}
           </div>
         </form>
       </section>

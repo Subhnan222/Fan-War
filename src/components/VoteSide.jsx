@@ -25,7 +25,7 @@ function VoteCreatorCard({ option, onVote }) {
         </span>
         <span>
           <b>{option.percent}%</b>
-          vote share
+          %
         </span>
       </span>
       <span className="vote-side-cta">
@@ -66,9 +66,8 @@ export default function VoteSide({ match, voteStats, onVoteSide, onBackToBattle 
           <p className="brand-mark">
             <span>FAN</span> <strong>WAR</strong>
           </p>
-          <div className="vote-side-badge">Cast your vote</div>
-          <h1>Who gets your vote?</h1>
-          <p>Pick your side. Your vote counts instantly.</p>
+          <div className="vote-side-badge">Vote Now</div>
+          <h1>Choose Side</h1>
         </header>
 
         <section className="vote-side-matchup" aria-label="Vote options">

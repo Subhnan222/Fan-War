@@ -1,12 +1,49 @@
-import { CalendarDays, Crown } from "lucide-react";
+import { CalendarDays, Clock3, Crown } from "lucide-react";
 
 function initialFor(name) {
   return name?.trim()?.charAt(0)?.toUpperCase() || "F";
 }
 
 function durationParts(duration) {
-  if (duration === "24 Hours") return { value: "24", unit: "HOURS" };
-  return { value: duration?.match(/\d+/)?.[0] || "5", unit: "DAYS" };
+  const label = duration || "1 Hour";
+  const value = label.match(/\d+/)?.[0] || "1";
+  const isHour = /hour/i.test(label);
+  const unit = isHour ? (value === "1" ? "HOUR" : "HOURS") : value === "1" ? "DAY" : "DAYS";
+
+  return { value, unit, isHour };
+}
+
+function fallbackMilliseconds(duration) {
+  const value = Number(duration?.match(/\d+/)?.[0] || 1);
+  const safeValue = Number.isFinite(value) ? value : 1;
+  return /day/i.test(duration || "") ? safeValue * 24 * 60 * 60 * 1000 : safeValue * 60 * 60 * 1000;
+}
+
+function posterCountdown(match) {
+  const endTime = new Date(match.endsAt).getTime();
+  const remainingMs = Number.isFinite(endTime)
+    ? Math.max(0, endTime - Date.now())
+    : fallbackMilliseconds(match.duration);
+  const totalSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (days > 0) {
+    return [
+      { value: days, label: "D" },
+      { value: hours, label: "H" },
+      { value: minutes, label: "M" },
+      { value: seconds, label: "S" },
+    ];
+  }
+
+  return [
+    { value: hours, label: "H" },
+    { value: minutes, label: "M" },
+    { value: seconds, label: "S" },
+  ];
 }
 
 function displayTitle(title) {
@@ -40,6 +77,8 @@ function CreatorPanel({ creator, side }) {
 
 export default function VSMatchCard({ match, cardRef }) {
   const duration = durationParts(match.duration);
+  const countdown = posterCountdown(match);
+  const DurationIcon = duration.isHour ? Clock3 : CalendarDays;
 
   return (
     <article className="vs-card design-one" ref={cardRef} aria-label="Fan War VS match card">
@@ -56,7 +95,7 @@ export default function VSMatchCard({ match, cardRef }) {
       </section>
 
       <section className="duration-badge">
-        <CalendarDays aria-hidden="true" size={18} />
+        <DurationIcon aria-hidden="true" size={18} />
         <span>{duration.value} {duration.unit} BATTLE</span>
       </section>
 
@@ -68,7 +107,14 @@ export default function VSMatchCard({ match, cardRef }) {
       <section className="timer-board">
         <strong>BATTLE STARTS NOW</strong>
         <span>ENDS IN</span>
-        <p><em>{duration.value}</em>D : <em>12</em>H : <em>34</em>M : <em>56</em>S</p>
+        <p className={countdown.length === 3 ? "compact-time" : undefined}>
+          {countdown.map((part, index) => (
+            <span key={part.label}>
+              <em>{String(part.value).padStart(2, "0")}</em>{part.label}
+              {index < countdown.length - 1 ? " : " : ""}
+            </span>
+          ))}
+        </p>
       </section>
 
       <footer className="bottom-slogan">

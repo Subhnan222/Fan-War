@@ -209,7 +209,7 @@ function mapBattleRowToMatch(battle, localMatchData) {
     title: battle.title || "Fan Battle",
     category: battle.category || null,
     message: battle.message || "Fans decide the winner.",
-    duration: battle.duration_label || "5 Days",
+    duration: battle.duration_label || "1 Hour",
     createdAt: battle.created_at || battle.starts_at,
     startsAt: battle.starts_at,
     endsAt: battle.ends_at,
@@ -329,7 +329,7 @@ function AlreadyVotedScreen({ match, voteRecord, onViewFanCard, onBackToBattle }
 
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(message);
-        setStatus("Voting link copied");
+        setStatus("Link copied");
         window.setTimeout(() => setStatus(""), 2200);
         return;
       }
@@ -361,7 +361,7 @@ function AlreadyVotedScreen({ match, voteRecord, onViewFanCard, onBackToBattle }
             onClick={onViewFanCard}
             disabled={!voteRecord?.fanName}
           >
-            View My Fan Card
+            View Card
           </button>
           <button className="preview-action secondary" type="button" onClick={onBackToBattle}>
             Back to Live Match

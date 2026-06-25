@@ -104,7 +104,7 @@ export default function MatchPreview({ match, onBackToEdit, onContinue, onTrackE
       link.remove();
 
       setPosterImageUrl(blobUrl);
-      setDownloadStatus("Poster ready. If download does not start, open the image and long-press to save.");
+      setDownloadStatus("Poster ready");
     } catch (error) {
       console.error("Could not download VS card", error);
       setDownloadStatus("Could not download poster. Try again.");
@@ -134,7 +134,7 @@ export default function MatchPreview({ match, onBackToEdit, onContinue, onTrackE
         document.body.removeChild(textarea);
       }
 
-      setCopyStatus("Voting link copied");
+      setCopyStatus("Link copied");
       onTrackEvent?.("copy_link_clicked", { battleId: match.id });
       window.setTimeout(() => setCopyStatus(""), 2200);
     } catch (error) {
@@ -154,8 +154,8 @@ export default function MatchPreview({ match, onBackToEdit, onContinue, onTrackE
 
         <aside className="preview-control-panel">
           <div className="preview-control-copy">
-            <span className="eyebrow">Match Created</span>
-            <h1>Match Created</h1>
+            <span className="eyebrow">Match Ready</span>
+            <h1>Match Ready</h1>
             <p>Your Fan War is live.</p>
           </div>
 
@@ -167,11 +167,11 @@ export default function MatchPreview({ match, onBackToEdit, onContinue, onTrackE
             <div className="preview-secondary-actions">
               <button className="preview-action secondary" type="button" onClick={handleDownload} disabled={isDownloading}>
                 <Download aria-hidden="true" size={20} />
-                {isDownloading ? "Preparing poster..." : "Download Poster"}
+                {isDownloading ? "Preparing..." : "Download Poster"}
               </button>
               <button className="preview-action secondary" type="button" onClick={handleCopyLink}>
                 <Copy aria-hidden="true" size={20} />
-                Copy Voting Link
+                Copy Link
               </button>
             </div>
             <button className="preview-action ghost" type="button" onClick={onBackToEdit}>
@@ -181,11 +181,10 @@ export default function MatchPreview({ match, onBackToEdit, onContinue, onTrackE
           </div>
 
           <section className="preview-next-steps" aria-label="What to do next">
-            <strong>Your match is ready.</strong>
             <ol>
-              <li><span>1</span> Download poster</li>
-              <li><span>2</span> Share with fans</li>
-              <li><span>3</span> Open live match</li>
+              <li><span>1</span> Poster</li>
+              <li><span>2</span> Share</li>
+              <li><span>3</span> Vote</li>
             </ol>
           </section>
 

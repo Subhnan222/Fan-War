@@ -127,7 +127,7 @@ export default function VoteSuccess({ match, selectedSide, fan, battleLink, onBa
   const handleCopyLink = async () => {
     try {
       const copied = await copyBattleLink();
-      setStatus(copied ? "Voting link copied" : "Copy unavailable");
+      setStatus(copied ? "Link copied" : "Copy unavailable");
       if (copied) {
         onTrackEvent?.("copy_link_clicked", {
           battleId: match.id,
@@ -171,7 +171,7 @@ export default function VoteSuccess({ match, selectedSide, fan, battleLink, onBa
           <div className="vote-success-actions">
             <button className="preview-action primary" type="button" onClick={handleDownload}>
               <Download aria-hidden="true" size={20} />
-              Download Fan Card
+              Download Card
             </button>
             <button className="preview-action secondary" type="button" onClick={handleWhatsAppShare}>
               <MessageCircle aria-hidden="true" size={20} />
@@ -179,7 +179,7 @@ export default function VoteSuccess({ match, selectedSide, fan, battleLink, onBa
             </button>
             <button className="preview-action secondary" type="button" onClick={handleCopyLink}>
               <Copy aria-hidden="true" size={20} />
-              Copy Voting Link
+              Copy Link
             </button>
             <button className="preview-action ghost" type="button" onClick={onBackToBattle}>
               Back to Live Match

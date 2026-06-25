@@ -76,9 +76,8 @@ export default function FanIdentity({
           <p className="brand-mark">
             <span>FAN</span> <strong>WAR</strong>
           </p>
-          <div className="fan-identity-badge">Fan identity</div>
-          <h1>Create your fan card</h1>
-          <p>Your vote for Team {selectedSide.name} is ready.</p>
+          <div className="fan-identity-badge">Fan Card</div>
+          <h1>Your Fan Card</h1>
         </header>
 
         <div className="fan-identity-grid">
@@ -92,7 +91,6 @@ export default function FanIdentity({
               )}
             </div>
             <strong>Team {selectedSide.name}</strong>
-            <p>Your fan card will show this team.</p>
           </aside>
 
           <form className="fan-profile-card" onSubmit={handleSubmit}>
@@ -151,7 +149,7 @@ export default function FanIdentity({
 
             <div className="fan-setup-actions">
               <button className="fan-start-button" type="submit" disabled={!canCreate || isSubmitting}>
-                {isSubmitting ? "CREATING..." : "CREATE MY FAN CARD"}
+                {isSubmitting ? "CREATING..." : "CREATE CARD"}
               </button>
               {submitError ? (
                 <p className="form-error-message" role="alert">
